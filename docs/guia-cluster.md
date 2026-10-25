@@ -173,10 +173,10 @@ Abre en tu navegador:
 http://192.168.1.100:9001
 ```
 
+![Pantalla de inicio de sesión de Portainer](capturas/01-portainer-login.png)
+
 Crea el usuario administrador y selecciona el entorno **Local**. Hazlo dentro de
 los primeros 5 minutos; si Portainer se reinicia antes, vuelve a intentarlo.
-
-![Pantalla de inicio de sesión de Portainer](capturas/01-portainer-login.png)
 
 **Comprobación de la Parte 1**
 
@@ -307,19 +307,18 @@ segundos). La app queda en:
 - `http://127.0.0.1:8080` — acceso directo, sin autenticación.
 - `http://127.0.0.1:8088` — a través del gateway con Basic Auth (Parte 3.4).
 
+Abre `http://127.0.0.1:8080` en el navegador:
+
 ![Panel de infraestructura de la app](capturas/02-panel-escritorio.png)
 
-La app tiene tres pestañas. En **Redes** se ven las subredes, las IP fijas y las
-pruebas de segmentación; en **Desarrollo**, los endpoints y el estado en vivo de
-la API:
+En la pestaña **Redes** se ven las subredes, las IP fijas y las pruebas de
+segmentación:
 
 ![Pestaña Redes del panel](capturas/03-panel-redes.png)
 
+En **Desarrollo** se ven los endpoints y el estado en vivo de la API:
+
 ![Pestaña Desarrollo del panel](capturas/04-panel-desarrollo.png)
-
-También se adapta a la pantalla de un celular:
-
-![Vista del panel en celular](capturas/05-panel-celular.jpg)
 
 Cómo quedó armado el stack:
 
@@ -366,6 +365,10 @@ docker exec api nslookup db.local 172.28.10.53
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080
 ```
 
+Salida real en el laboratorio:
+
+![Salida real de las 7 pruebas](capturas/05-terminal-segmentacion.png)
+
 | # | Resultado esperado |
 |---|---|
 | 1 | sin salida |
@@ -376,17 +379,15 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080
 | 6 | `172.28.20.20` |
 | 7 | `200` |
 
-![Salida real de las 7 pruebas](capturas/06-terminal-segmentacion.png)
-
 En Portainer, entra a **Services** y confirma que los contenedores del stack
 están en ejecución:
 
-![Servicios del stack en Portainer](capturas/07-portainer-servicios.png)
+![Servicios del stack en Portainer](capturas/06-portainer-servicios.png)
 
 Luego entra a **Networks**: deben existir `lab14-segmentado_front` y
 `lab14-segmentado_back`, y la red `back` debe aparecer como interna:
 
-![Redes del stack en Portainer](capturas/08-portainer-redes.png)
+![Redes del stack en Portainer](capturas/07-portainer-redes.png)
 
 Los nombres `web.local`, `api.local` y `db.local` deben coincidir con las IP
 fijas del compose y con `dnsmasq.conf`.
@@ -429,6 +430,10 @@ curl -s -o /dev/null -w 'portainer -> %{http_code}\n' \
   -u "lab14:$GATEWAY_PASS" http://127.0.0.1:9090/portainer/
 ```
 
+Salida real:
+
+![Prueba del gateway: 401 sin credenciales y 200 con credenciales](capturas/08-terminal-gateway.png)
+
 Esperado:
 
 ```text
@@ -440,8 +445,6 @@ portainer -> 200
 
 Abre `http://127.0.0.1:8088/` y `http://127.0.0.1:9090/portainer/` e inicia
 sesión con el usuario `lab14` y la contraseña que elegiste.
-
-![Prueba del gateway: 401 sin credenciales y 200 con credenciales](capturas/09-terminal-gateway.png)
 
 > `.htpasswd` está en `.gitignore`. Nunca lo subas al repositorio ni escribas la
 > contraseña en la documentación.
