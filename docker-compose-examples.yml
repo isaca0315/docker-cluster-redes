@@ -5,8 +5,7 @@
 # (cada réplica necesita su propio nombre) y `docker stack deploy` no construye
 # imágenes: por eso aquí se usan imágenes ya publicadas.
 
-
-name: swarm-examples
+# Sin `name:`: `docker stack deploy` toma el nombre del argumento de la CLI.
 services:
   web:
     image: nginx:alpine

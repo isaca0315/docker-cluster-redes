@@ -1,9 +1,7 @@
-
-name: portainer-agent
+# Sin `name:`: `docker stack deploy` toma el nombre del argumento de la CLI.
 services:
   portainer-agent:
     image: portainer/agent:latest
-    container_name: portainer_agent
     environment:
       AGENT_CLUSTER_ADDR: tasks.agent
     volumes:

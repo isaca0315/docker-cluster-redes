@@ -2,15 +2,13 @@ FROM python:3.9-alpine
 
 WORKDIR /app
 
-# Instalar dependencias
-RUN apk add --no-cache gcc musl-dev linux-headers
-
 # Copiar código
 COPY api/app.py .
 COPY api/requirements.txt .
 
-# Instalar Python deps
-RUN pip install --no-cache-dir -r requirements.txt
+# Instalar Python deps (Flask/requests son Python puro; se fuerzan wheels
+# precompilados para no necesitar gcc/musl-dev en la imagen)
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
 # Exponer puerto (usado internamente)
 EXPOSE 5000

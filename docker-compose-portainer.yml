@@ -1,13 +1,10 @@
-
-name: portainer
+# Sin `name:`: `docker stack deploy` toma el nombre del argumento de la CLI.
 services:
   portainer:
     image: portainer/portainer-ce:latest
-    container_name: portainer
     command: -H unix:///var/run/docker.sock
     ports:
-      - "9000:9000"
-      - "8000:8000"
+      - "9001:9000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data

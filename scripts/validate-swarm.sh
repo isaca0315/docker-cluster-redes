@@ -24,13 +24,13 @@ fi
 
 # 3. Mostrar nodos
 echo -e "\n3️⃣ Nodos del clúster:"
-docker node ls 2>/dev/null --format "table {{.ID}}\t{{.HOSTNAME}}\t{{.STATUS}}\t{{.ROLE}}" || echo "   No hay nodos o Swarm no está activo"
+docker node ls 2>/dev/null --format "table {{.ID}}\t{{.Hostname}}\t{{.Status}}\t{{.Availability}}\t{{.ManagerStatus}}" || echo "   No hay nodos o Swarm no está activo"
 
 # 4. Verificar Puertos
 echo -e "\n4️⃣ Verificando puertos necesarios..."
 PORTS=(2377/tcp 4789/udp 7946/tcp 7946/udp 9000/tcp 8000/tcp)
 for port in "${PORTS[@]}"; do
-    PORT=${port%/tcp}
+    PORT=${port%/*}
     if ss -tuln | grep -q ":$PORT "; then
         echo "   ✅ Puerto $port está activo"
     else
@@ -40,7 +40,7 @@ done
 
 # 5. Verificar stacks corriendo
 echo -e "\n5️⃣ Stacks desplegados:"
-STACKS=$(docker stack ls 2>/dev/null -q)
+STACKS=$(docker stack ls 2>/dev/null --format '{{.Name}}')
 if [ -n "$STACKS" ]; then
     echo "$STACKS" | while read stack; do
         VERSION=$(docker stack ps "$stack" 2>/dev/null | grep -c "Running" | head -1)

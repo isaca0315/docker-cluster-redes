@@ -42,8 +42,14 @@ docker-cluster/
 │   ├── verificar.sh                               # Verifica segmentación y DNS (7 pruebas)
 │   └── demo-scaling.sh                            # Demuestra escalado horizontal
 │
+├── 🌐 web/                                        # App visual del laboratorio
+│   ├── index.html                                 # Panel + diagrama SVG animado
+│   ├── styles.css                                 # Tema, tarjetas y animaciones
+│   ├── app.js                                     # Datos, pestañas y polling en vivo
+│   └── nginx.conf                                 # Sirve el front y proxy /api → api:5000
+│
 └── 📄 examples/
-    ├── nginx.conf                                 # Config nginx
+    ├── nginx.conf                                 # Config nginx de ejemplo
     └── index.html                                 # Página de ejemplo
 ```
 
@@ -103,6 +109,30 @@ Y la API confirma el puente `front → back`:
 docker exec api python -c "import requests; print(requests.get('http://localhost:5000/db').text)"
 # -> {"db":"reachable","host":"db","port":5432}
 ```
+
+### Panel visual del laboratorio
+
+`web/` contiene una app completa (HTML/CSS/JS, sin dependencias externas) que
+se sirve en `http://localhost:8080` y, por el túnel, en
+`https://app-red.ponciop.online/` con Basic Auth.
+
+- **Diagrama SVG animado:** Cloudflare → gateway nginx → `web` → `api` → `db`,
+  con paquetes en movimiento, red `front` y red `back` (internal), DNS y Swarm.
+- **Infraestructura:** nodos `kernel-lab` (Leader) y `ubuntu24-cwl` (Worker),
+  Portainer, gateway, tunnel, web, api, db y dnsmasq.
+- **Redes:** subredes, IPs estáticas, miembros, tabla DNS y las 7 pruebas de
+  segmentación.
+- **Desarrollo:** stack, endpoints con estado en vivo, recorrido de una petición
+  y el JSON real de `/api/db` + `/api/info`.
+- Haz clic en cualquier nodo del diagrama para saltar a su ficha técnica.
+
+Endpoints que consume el panel (todos vía `web` → `api`):
+
+| Endpoint | Devuelve |
+|---|---|
+| `GET /api/health` | `{"status":"healthy","service":"api"}` |
+| `GET /api/db` | `{"db":"reachable","host":"db","port":5432}` |
+| `GET /api/info` | hostname, Python, uptime, IPs y target de DB |
 
 ### C) Escalado en el clúster (extra Swarm)
 
@@ -193,6 +223,23 @@ docker service scale <stack>_<service>=5
   `docker-compose-examples.yml` usa imágenes publicadas y sin `container_name`.
 - **`internal: true`** en la red `back` es lo que bloquea el acceso de `web` a
   `db`. Si la DB publica `ports:` o falta esa opción, el aislamiento se pierde.
+- **Acceso remoto seguro:** `web` (8080) y `web-planos` (8081) se publican solo
+  en `127.0.0.1`. El túnel de Cloudflare entra por el gateway nginx con Basic
+  Auth (`~/lab14-gateway`):
+  - `https://app-red.ponciop.online/` → app completa (gateway 9000 → web 8080).
+  - `https://app-red.ponciop.online/api/db` → web reenvía a `api:5000`, que
+    consulta `db:5432`.
+  - `https://cluster-red.ponciop.online/` → Portainer directo (login propio).
+  El gateway también ofrece acceso local en `8088` (app) y `9090` (Portainer).
+  No expongas los puertos 2377/7946/4789 ni el socket de Docker.
+- **Proxy front → API:** `web/nginx.conf` monta en `web` un `location /api/`
+  que reenvía a `http://api:5000/`. Sin ese proxy el navegador no puede hablar
+  con la API (la API no publica puertos al host).
+- **Panel visual (`web/`):** SPA sin frameworks que muestra el laboratorio con
+  un diagrama SVG animado (paquetes, flujos y pulsos), pestañas de
+  **Infraestructura**, **Redes** y **Desarrollo**, y estado en vivo cada 4 s
+  contra `/api/health`, `/api/db` y `/api/info`. Se sirve desde
+  `web/nginx:alpine`; `examples/index.html` queda como página mínima de ejemplo.
 - Las IPs de `dnsmasq.conf` deben coincidir con las de `docker-compose-network.yml`.
 - En `dnsmasq.conf` **no uses `interface=0.0.0.0`**: `interface` espera un
   *nombre* de interfaz (ej. `eth0`), no una IP. Con un valor inválido dnsmasq

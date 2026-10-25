@@ -9,7 +9,7 @@ services:
     image: nginx:alpine
     container_name: web-planos
     ports:
-      - "8081:80"
+      - "127.0.0.1:8081:80"
     volumes:
       - ./examples/index.html:/usr/share/nginx/html/index.html:ro
     networks:

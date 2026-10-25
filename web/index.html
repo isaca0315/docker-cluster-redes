@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab 14 · Docker Swarm · Infraestructura, Redes y Desarrollo</title>
+  <meta name="description" content="Diagrama vivo del Laboratorio 14: Docker Swarm, segmentación de redes, app web, API y base de datos.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-a" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🐳</div>
+      <div>
+        <h1>Lab 14 <span>· Docker Swarm</span></h1>
+        <p>Infraestructura · Redes · Desarrollo</p>
+      </div>
+    </div>
+    <div class="live-pill" id="live-pill">
+      <span class="dot" id="global-dot"></span>
+      <span id="global-status">conectando…</span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">UTP · Laboratorio 14</span>
+        <h2>Una app. Dos redes. Cero atajos.</h2>
+        <p>
+          El navegador entra por <strong>Cloudflare</strong>, el <strong>gateway nginx</strong>
+          aplica Basic Auth, <strong>web</strong> habla con <strong>api</strong> y solo
+          <strong>api</strong> alcanza <strong>db</strong>. Todo el laboratorio, en vivo.
+        </p>
+        <div class="hero-actions">
+          <button class="btn primary" id="toggle-anim" type="button">⏸ Pausar animación</button>
+          <a class="btn ghost" href="#detalle">Ver detalle técnico</a>
+        </div>
+      </div>
+      <div class="stats" id="stats">
+        <div class="stat">
+          <span id="stat-nodes">2</span>
+          <small>nodos Swarm</small>
+        </div>
+        <div class="stat">
+          <span id="stat-services">7</span>
+          <small>servicios</small>
+        </div>
+        <div class="stat">
+          <span id="stat-networks">2</span>
+          <small>redes</small>
+        </div>
+        <div class="stat">
+          <span id="stat-checks">7/7</span>
+          <small>checks OK</small>
+        </div>
+      </div>
+    </section>
+
+    <div class="banner" id="banner" hidden>
+      ⚠️ No se pudo contactar con la API. El diagrama sigue visible con los últimos datos conocidos.
+      <button type="button" id="retry">Reintentar</button>
+    </div>
+
+    <section class="panel diagram-card" aria-labelledby="topology-title">
+      <div class="panel-head">
+        <div>
+          <h3 id="topology-title">Topología en vivo</h3>
+          <p>Haz clic en un componente para ver su ficha técnica.</p>
+        </div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="lg lg-front"></i> front</span>
+          <span><i class="lg lg-back"></i> back (internal)</span>
+          <span><i class="lg lg-flow"></i> tráfico</span>
+          <span><i class="lg lg-dns"></i> DNS</span>
+        </div>
+      </div>
+
+      <div class="diagram-wrap">
+        <svg id="topology" viewBox="0 0 1400 860" role="img"
+             aria-label="Diagrama de infraestructura, redes y flujo de la aplicación">
+          <defs>
+            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8"/>
+            </marker>
+            <marker id="arrow-pink" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#f472b6"/>
+            </marker>
+            <marker id="arrow-dns" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa"/>
+            </marker>
+            <linearGradient id="g-host" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0f1b31"/>
+              <stop offset="100%" stop-color="#0a1223"/>
+            </linearGradient>
+            <linearGradient id="g-front" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(34,211,238,.10)"/>
+              <stop offset="100%" stop-color="rgba(34,211,238,.02)"/>
+            </linearGradient>
+            <linearGradient id="g-back" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(244,114,182,.12)"/>
+              <stop offset="100%" stop-color="rgba(244,114,182,.03)"/>
+            </linearGradient>
+          </defs>
+
+          <!-- ================= ZONAS ================= -->
+          <rect class="zone host" x="320" y="40" width="1040" height="790" rx="24"/>
+          <text class="zone-title" x="350" y="74">kernel-lab</text>
+          <text class="zone-sub" x="350" y="94">172.25.208.103 · Docker 29.1.3 · Swarm Leader</text>
+          <rect class="badge-soft" x="1210" y="54" width="126" height="24" rx="12"/>
+          <text class="badge-text" x="1273" y="70" text-anchor="middle">HOST FÍSICO</text>
+
+          <rect class="zone cloud" x="40" y="70" width="230" height="150" rx="18"/>
+          <text class="cloud-icon" x="155" y="124" text-anchor="middle">☁</text>
+          <text class="cloud-title" x="155" y="152" text-anchor="middle">Cloudflare</text>
+          <text class="zone-sub center" x="155" y="172" text-anchor="middle">Edge · túnel saliente</text>
+          <rect class="badge-soft" x="58" y="184" width="194" height="24" rx="12"/>
+          <text class="badge-text mono" x="155" y="200" text-anchor="middle">app-red.ponciop.online</text>
+
+          <rect class="zone front" x="360" y="320" width="430" height="340" rx="18"/>
+          <text class="zone-title small" x="385" y="350">RED FRONT</text>
+          <text class="zone-sub mono" x="385" y="370">bridge · 172.28.10.0/24</text>
+
+          <rect class="zone back" x="985" y="320" width="350" height="340" rx="18"/>
+          <text class="zone-title small pink" x="1010" y="350">RED BACK</text>
+          <text class="lock" x="1305" y="352" text-anchor="end">🔒</text>
+          <text class="zone-sub mono" x="1010" y="370">internal · 172.28.20.0/24</text>
+
+          <rect class="zone swarm" x="1010" y="90" width="320" height="260" rx="16"/>
+          <text class="zone-title small center" x="1170" y="118" text-anchor="middle">DOCKER SWARM</text>
+
+          <!-- ================= FLUJOS ================= -->
+          <g class="flows">
+            <path id="flow-cloud-gateway" class="flow" d="M 270 148 C 310 148, 330 160, 368 160" marker-end="url(#arrow)"/>
+            <path id="flow-gateway-web" class="flow" d="M 510 210 C 510 268, 575 300, 575 390" marker-end="url(#arrow)"/>
+            <path id="flow-gateway-portainer" class="flow dashed" d="M 650 160 L 698 160" marker-end="url(#arrow)"/>
+            <path id="flow-portainer-swarm" class="flow dashed" d="M 960 160 C 990 160, 1000 173, 1026 173" marker-end="url(#arrow)"/>
+            <path id="flow-web-api" class="flow" d="M 765 446 L 813 468" marker-end="url(#arrow)"/>
+            <path id="flow-api-db" class="flow pink" d="M 965 468 L 1008 456" marker-end="url(#arrow-pink)"/>
+            <path id="flow-dns" class="flow dns" d="M 575 500 L 575 518" marker-end="url(#arrow-dns)"/>
+          </g>
+
+          <text class="flow-label" x="284" y="136">túnel</text>
+          <text class="flow-label" x="516" y="292">HTTP</text>
+          <text class="flow-label" x="657" y="150">/portainer</text>
+          <text class="flow-label" x="966" y="148">docker.sock</text>
+          <text class="flow-label" x="766" y="430">/api/*</text>
+          <text class="flow-label pink" x="966" y="446">TCP 5432</text>
+          <text class="flow-label dns" x="586" y="514">DNS</text>
+
+          <!-- ================= NODOS ================= -->
+          <g class="node" id="node-cloud" data-card="card-cloud" tabindex="0" role="button"
+             aria-label="Cloudflare Edge">
+            <rect class="card cloud-card" x="52" y="82" width="206" height="126" rx="14"/>
+          </g>
+
+          <g class="node" id="node-gateway" data-card="card-gateway" tabindex="0" role="button"
+             aria-label="Gateway nginx">
+            <rect class="card" x="370" y="110" width="280" height="100" rx="14"/>
+            <text class="n-icon" x="396" y="150">🛡</text>
+            <text class="n-title" x="424" y="141">Gateway nginx</text>
+            <text class="n-mono" x="424" y="162">127.0.0.1:9000</text>
+            <text class="n-sub" x="424" y="182">Basic Auth · app + /api</text>
+            <circle class="status-dot ok" id="dot-gateway" cx="630" cy="128" r="5"/>
+          </g>
+
+          <g class="node" id="node-portainer" data-card="card-portainer" tabindex="0" role="button"
+             aria-label="Portainer CE">
+            <rect class="card" x="700" y="110" width="260" height="100" rx="14"/>
+            <text class="n-icon" x="726" y="150">📦</text>
+            <text class="n-title" x="754" y="141">Portainer CE</text>
+            <text class="n-mono" x="754" y="162">kernel-lab · :9001</text>
+            <text class="n-sub" x="754" y="182">admin · login propio</text>
+            <circle class="status-dot ok" id="dot-portainer" cx="940" cy="128" r="5"/>
+          </g>
+
+          <g class="node" id="node-manager" data-card="card-manager" tabindex="0" role="button"
+             aria-label="Nodo manager kernel-lab">
+            <rect class="card node-card" x="1028" y="132" width="284" height="82" rx="12"/>
+            <text class="n-title" x="1048" y="158">kernel-lab</text>
+            <text class="n-sub" x="1048" y="178">Manager · Leader</text>
+            <text class="n-mono" x="1048" y="198">172.25.208.103</text>
+            <circle class="status-dot ok" cx="1292" cy="150" r="5"/>
+          </g>
+
+          <line class="swarm-link" x1="1170" y1="214" x2="1170" y2="232"/>
+          <text class="flow-label center" x="1170" y="228" text-anchor="middle">swarm</text>
+
+          <g class="node" id="node-worker" data-card="card-worker" tabindex="0" role="button"
+             aria-label="Nodo worker ubuntu24-cwl">
+            <rect class="card node-card" x="1028" y="232" width="284" height="82" rx="12"/>
+            <text class="n-title" x="1048" y="258">ubuntu24-cwl</text>
+            <text class="n-sub" x="1048" y="278">Worker · Ready</text>
+            <text class="n-mono" x="1048" y="298">172.25.208.110</text>
+            <circle class="status-dot ok" cx="1292" cy="250" r="5"/>
+          </g>
+
+          <g class="node" id="node-web" data-card="card-web" tabindex="0" role="button"
+             aria-label="Contenedor web nginx">
+            <rect class="card" x="385" y="392" width="380" height="108" rx="12"/>
+            <text class="n-title" x="405" y="420">web · nginx:alpine</text>
+            <text class="n-mono" x="405" y="442">172.28.10.10 · :8080</text>
+            <text class="n-sub" x="405" y="462">HTML + /api → api:5000</text>
+            <text class="n-sub" x="405" y="480">healthcheck: HTTP /</text>
+            <circle class="status-dot ok" id="dot-web" cx="748" cy="410" r="5"/>
+          </g>
+
+          <g class="node" id="node-dnsmasq" data-card="card-dnsmasq" tabindex="0" role="button"
+             aria-label="dnsmasq DNS interno">
+            <rect class="card" x="385" y="520" width="380" height="108" rx="12"/>
+            <text class="n-title" x="405" y="548">dnsmasq · :53</text>
+            <text class="n-mono" x="405" y="570">172.28.10.53</text>
+            <text class="n-sub" x="405" y="590">web.local · api.local · dns.local</text>
+            <text class="n-sub" x="405" y="608">DNS interno del laboratorio</text>
+            <circle class="status-dot ok" cx="748" cy="538" r="5"/>
+          </g>
+
+          <g class="node" id="node-api" data-card="card-api" tabindex="0" role="button"
+             aria-label="API Flask">
+            <rect class="card api-card" x="815" y="405" width="150" height="150" rx="16"/>
+            <text class="n-title center" x="890" y="443" text-anchor="middle">api</text>
+            <text class="n-mono center" x="890" y="466" text-anchor="middle">Flask :5000</text>
+            <text class="n-sub center" x="890" y="492" text-anchor="middle">front .10.20</text>
+            <text class="n-sub center" x="890" y="510" text-anchor="middle">back .20.30</text>
+            <rect class="badge-soft" x="845" y="522" width="90" height="20" rx="10"/>
+            <text class="badge-text" x="890" y="536" text-anchor="middle">PUENTE</text>
+            <circle class="status-dot unknown" id="dot-api" cx="950" cy="418" r="5"/>
+          </g>
+
+          <g class="node" id="node-db" data-card="card-db" tabindex="0" role="button"
+             aria-label="Base de datos PostgreSQL">
+            <rect class="card" x="1010" y="392" width="300" height="125" rx="12"/>
+            <text class="n-title" x="1030" y="420">db · postgres:13-alpine</text>
+            <text class="n-mono" x="1030" y="443">172.28.20.20 · :5432</text>
+            <text class="n-sub" x="1030" y="465">appdb · appuser</text>
+            <text class="n-sub" x="1030" y="487">pg_isready healthcheck</text>
+            <circle class="status-dot unknown" id="dot-db" cx="1290" cy="410" r="5"/>
+          </g>
+
+          <g class="node" id="node-isolation" data-card="card-back" tabindex="0" role="button"
+             aria-label="Aislamiento de la red back">
+            <rect class="card isolation-card" x="1010" y="535" width="300" height="95" rx="12"/>
+            <text class="n-title" x="1030" y="563">🛡 Aislada por diseño</text>
+            <text class="n-mono" x="1030" y="585">internal: true</text>
+            <text class="n-sub" x="1030" y="605">sin salida a Internet ni a front</text>
+            <text class="n-sub" x="1030" y="622">solo api cruza (172.28.20.30)</text>
+          </g>
+
+          <!-- ================= PAQUETES ANIMADOS ================= -->
+          <g class="packets">
+            <circle class="packet" r="5">
+              <animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#flow-cloud-gateway"/></animateMotion>
+            </circle>
+            <circle class="packet" r="5">
+              <animateMotion dur="3.4s" repeatCount="indefinite" begin="0.4s"><mpath href="#flow-gateway-web"/></animateMotion>
+            </circle>
+            <circle class="packet" r="5">
+              <animateMotion dur="3.4s" repeatCount="indefinite" begin="2.1s"><mpath href="#flow-gateway-web"/></animateMotion>
+            </circle>
+            <circle class="packet cyan" r="5">
+              <animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#flow-web-api"/></animateMotion>
+            </circle>
+            <circle class="packet pink" r="5">
+              <animateMotion dur="1.8s" repeatCount="indefinite" begin="0.3s"><mpath href="#flow-api-db"/></animateMotion>
+            </circle>
+            <circle class="packet dns" r="4">
+              <animateMotion dur="2.2s" repeatCount="indefinite"><mpath href="#flow-dns"/></animateMotion>
+            </circle>
+          </g>
+        </svg>
+      </div>
+
+      <div class="diagram-foot">
+        <span class="chip"><span class="dot" id="chip-api-dot"></span> API <b id="api-latency">—</b></span>
+        <span class="chip"><span class="dot" id="chip-db-dot"></span> DB <b id="db-live">—</b></span>
+        <span class="chip"><span class="dot ok"></span> Swarm <b>2/2 ready</b></span>
+        <span class="chip"><span class="dot ok"></span> Checks <b>7/7</b></span>
+        <span class="chip muted">actualizado <b id="last-update">—</b></span>
+      </div>
+    </section>
+
+    <section class="panel tabs-card" id="detalle" aria-label="Detalle técnico">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="infra" role="tab" aria-selected="true">🏗 Infraestructura</button>
+        <button class="tab" data-tab="redes" role="tab" aria-selected="false">🕸 Redes</button>
+        <button class="tab" data-tab="dev" role="tab" aria-selected="false">💻 Desarrollo</button>
+      </nav>
+      <div class="tab-panel active" id="panel-infra" role="tabpanel"></div>
+      <div class="tab-panel" id="panel-redes" role="tabpanel"></div>
+      <div class="tab-panel" id="panel-dev" role="tabpanel"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Laboratorio 14 · UTP</span>
+    <span>Cloudflare Tunnel → nginx → web → API → PostgreSQL</span>
+    <span>Docker Swarm · kernel-lab + ubuntu24-cwl</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

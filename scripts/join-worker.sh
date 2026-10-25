@@ -22,22 +22,26 @@ if docker info 2>/dev/null | grep -q "Swarm: active"; then
     docker swarm leave --force
 fi
 
-# Pedir IP del maestro
-echo -e "\n📍 Ingresar información del nodo maestro"
-read -p "IP del nodo maestro (ej: 192.168.1.100): " MASTER_IP
+# IP del maestro (1er argumento) y token del worker (2do argumento)
+MASTER_IP=${1:-}
+WORKER_TOKEN=${2:-}
+
+# Pedir IP del maestro si no se pasó por argumento
+if [ -z "$MASTER_IP" ]; then
+    echo -e "\n📍 Ingresar información del nodo maestro"
+    read -p "IP del nodo maestro (ej: 192.168.1.100): " MASTER_IP
+fi
 
 if [ -z "$MASTER_IP" ]; then
     echo "❌ IP del maestro es requerida"
     exit 1
 fi
 
-# Pedir token o obtenerlo
-if [ -z "$1" ]; then
+# Pedir token si no se pasó por argumento
+if [ -z "$WORKER_TOKEN" ]; then
     echo -e "\n🔑 Ejecuta en el maestro: docker swarm join-token worker"
     echo "Y copia el TOKEN aquí"
     read -p "Token del worker: " WORKER_TOKEN
-else
-    WORKER_TOKEN="$1"
 fi
 
 if [ -z "$WORKER_TOKEN" ]; then
