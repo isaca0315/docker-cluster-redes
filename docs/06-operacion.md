@@ -1,7 +1,7 @@
 # 06 — Operación
 
-Runbook para el día a día. Todos los comandos se ejecutan en **kernel-lab** y
-asumen el repositorio en `~/docker-cluster-redes`.
+Guía de operación para el día a día. Todos los comandos se ejecutan en
+**kernel-lab** y asumen el repositorio en `~/docker-cluster-redes`.
 
 ## Chequeo de 30 segundos
 
@@ -69,7 +69,7 @@ Evidencia: [`salidas/contenedores.txt`](salidas/contenedores.txt).
 
 > `web` usa `127.0.0.1` a propósito: con `localhost` el healthcheck fallaba
 > porque el contenedor resuelve `localhost` a `::1` y no tiene IPv6. Ver
-> [07-troubleshooting.md](07-troubleshooting.md).
+> [07-solucion-problemas.md](07-solucion-problemas.md).
 
 ## Logs
 
@@ -127,7 +127,7 @@ docker compose -f docker-compose-network.yml down          # sin -v: conserva da
 ### Gateway
 
 ```bash
-cd ~/lab14-gateway
+cd ~/docker-cluster-redes/infra/gateway
 docker compose up -d --force-recreate gateway
 docker logs lab14-gateway --tail 20
 ```
@@ -238,7 +238,7 @@ Orden recomendado para parar:
 sudo systemctl stop cloudflared 2>/dev/null || true
 
 # 2) gateway
-cd ~/lab14-gateway && docker compose down
+cd ~/docker-cluster-redes/infra/gateway && docker compose down
 
 # 3) stack del laboratorio (conserva volumen)
 cd ~/docker-cluster-redes

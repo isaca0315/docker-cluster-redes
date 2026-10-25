@@ -47,9 +47,9 @@ habla con el gateway; la app consulta la API a través del proxy `/api/` de
 - Config del proxy de `web`.
 - JSON vivo con las respuestas reales de `/api/db` y `/api/info`.
 
-### Móvil
+### Celular
 
-![Vista móvil](capturas/04-panel-movil.jpg)
+![Vista en celular](capturas/04-panel-celular.jpg)
 
 La captura se tomó a **390 × 844** (viewport de teléfono). El layout pasa a una
 columna, el diagrama se escala y no hay overflow horizontal.
@@ -132,7 +132,7 @@ Se automatizó con Chrome DevTools Protocol durante el desarrollo:
 ## Capturas reproducibles
 
 ```bash
-# App de escritorio, redes, desarrollo, diagrama, móvil y Portainer
+# App de escritorio, redes, desarrollo, diagrama, celular y Portainer
 BASIC_AUTH="$GATEWAY_USER:$GATEWAY_PASS" \
   node scripts/docs/capturar-pantallas.js \
   --out docs/capturas \

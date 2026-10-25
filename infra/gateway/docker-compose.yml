@@ -1,0 +1,27 @@
+# Gateway de exposición segura para el Laboratorio 14.
+#
+# - Escucha solo en loopback (127.0.0.1), nunca en la LAN.
+# - Basic Auth delante de la app y de Portainer.
+# - El túnel de Cloudflare apunta a estos puertos locales.
+#
+#   App       -> http://localhost:9000  (entrada del túnel)
+#   App       -> http://localhost:8088  (uso local)
+#   Portainer -> http://localhost:9090/portainer/  (uso local)
+#
+# Uso:
+#   cd infra/gateway
+#   docker compose up -d
+#
+# Antes de levantarlo, crea el archivo .htpasswd (ver README.md).
+
+name: lab14-gateway
+
+services:
+  gateway:
+    image: nginx:alpine
+    container_name: lab14-gateway
+    restart: unless-stopped
+    network_mode: host          # comparte el loopback del host, sin publicar puertos
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro

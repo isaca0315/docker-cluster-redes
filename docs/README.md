@@ -8,6 +8,10 @@ exposición por túnel con Basic Auth.
 > **Estado:** operativo y verificado el **2026-10-25** (transcripciones
 > 22:15–22:16 UTC; capturas entre 22:13 y 22:16 UTC).
 > `./scripts/verificar.sh` → **7 OK, 0 FALLO**.
+>
+> **¿Vas a replicar el laboratorio?** Empieza por la
+> [Guía de réplica paso a paso](00-guia-replica.md). El resto de páginas
+> explican el diseño y la evidencia real.
 
 ## Accesos
 
@@ -28,13 +32,14 @@ Este repositorio **no** contiene contraseñas: en los comandos se usan
 
 | # | Página | Contenido |
 |---|---|---|
+| 00 | [Guía de réplica](00-guia-replica.md) | **Empieza aquí:** pasos ordenados, comprobaciones y lista de control final |
 | 01 | [Arquitectura](01-arquitectura.md) | Componentes, topología, flujo de una petición y decisiones de diseño |
 | 02 | [Despliegue](02-despliegue.md) | Swarm, worker, Portainer, stack segmentado, gateway y túnel, paso a paso |
 | 03 | [Redes y segmentación](03-redes-segmentacion.md) | `front`/`back`, `internal: true`, DNS interno y las 7 pruebas |
 | 04 | [Aplicación visual](04-aplicacion.md) | Panel animado, pestañas, endpoints, polling y validación |
 | 05 | [Gateway y túnel](05-gateway-tunel.md) | Basic Auth, mapa de puertos, Cloudflare Tunnel y riesgos |
-| 06 | [Operación](06-operacion.md) | Runbook: estado, logs, reinicios, respaldo y regeneración de docs |
-| 07 | [Troubleshooting](07-troubleshooting.md) | Problemas reales encontrados y su causa raíz |
+| 06 | [Operación](06-operacion.md) | Guía diaria: estado, logs, reinicios, respaldo y regeneración de docs |
+| 07 | [Solución de problemas](07-solucion-problemas.md) | Problemas reales encontrados y su causa raíz |
 | 08 | [Pendientes](08-pendientes.md) | Entregable, deuda técnica y siguientes pasos |
 
 ## Evidencia reproducible
@@ -76,7 +81,7 @@ Todo lo que aparece en esta documentación se genera con un solo comando:
 | [`01-panel-escritorio.png`](capturas/01-panel-escritorio.png) | Pestaña Infraestructura completa (1440 px) |
 | [`02-panel-redes.png`](capturas/02-panel-redes.png) | Pestaña Redes: subredes, IPs y pruebas |
 | [`03-panel-desarrollo.png`](capturas/03-panel-desarrollo.png) | Pestaña Desarrollo: endpoints y JSON real |
-| [`04-panel-movil.jpg`](capturas/04-panel-movil.jpg) | Vista móvil a 390 px |
+| [`04-panel-celular.jpg`](capturas/04-panel-celular.jpg) | Vista en celular a 390 px |
 | [`05-diagrama.png`](capturas/05-diagrama.png) | Diagrama SVG aislado |
 | [`06-portainer-login.png`](capturas/06-portainer-login.png) | Pantalla de login de Portainer |
 | [`07-portainer-servicios.png`](capturas/07-portainer-servicios.png) | Servicios del Swarm vistos en Portainer |
@@ -100,14 +105,19 @@ Todo lo que aparece en esta documentación se genera con un solo comando:
 ```text
 docs/
 ├── README.md                  # este índice
+├── 00-guia-replica.md         # réplica paso a paso (empieza aquí)
 ├── 01-arquitectura.md         # componentes y flujos
 ├── 02-despliegue.md           # cómo se construyó
 ├── 03-redes-segmentacion.md   # aislamiento y DNS
 ├── 04-aplicacion.md           # panel visual
 ├── 05-gateway-tunel.md        # exposición segura
 ├── 06-operacion.md            # día a día
-├── 07-troubleshooting.md      # problemas y soluciones
+├── 07-solucion-problemas.md   # problemas y soluciones
 ├── 08-pendientes.md           # lo que falta
 ├── capturas/                  # 17 PNG/JPG
 └── salidas/                   # 9 transcripciones .txt
 ```
+
+El gateway que se describe en [05](05-gateway-tunel.md) está versionado en
+[`infra/gateway/`](../infra/gateway/): incluye el compose, el `nginx.conf` y las
+instrucciones para crear el `.htpasswd` sin subirlo a Git.

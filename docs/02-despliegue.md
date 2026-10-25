@@ -5,6 +5,10 @@ comandos se ejecutan en **kernel-lab** salvo los marcados como worker.
 Los valores entre `<...>` son secretos o dependen del entorno y **no** se
 guardan en el repositorio.
 
+> Para una versión pensada para replicar desde cero, con comprobaciones en cada
+> paso, usa la [Guía de réplica](00-guia-replica.md). Esta página conserva la
+> secuencia real y las salidas que se obtuvieron.
+
 ## 0. Requisitos
 
 | Recurso | Valor usado |
@@ -12,7 +16,7 @@ guardan en el repositorio.
 | Manager | `kernel-lab` · `172.25.208.103` · Linux 6.8 · Docker 29.8.1 |
 | Worker | `ubuntu24-cwl` · `172.25.208.110` · Docker 29.1.3 |
 | Repositorio | `/home/kernel/docker-cluster-redes` |
-| Gateway | `/home/kernel/lab14-gateway` |
+| Gateway | `infra/gateway/` (dentro del repositorio) |
 | DNS interno | `172.28.10.53` |
 | Túnel | Cloudflare, modo *remotely managed* |
 
@@ -142,20 +146,21 @@ El detalle de cada prueba está en [03-redes-segmentacion.md](03-redes-segmentac
 
 ## 5. Gateway con Basic Auth
 
-El gateway vive fuera del repositorio, en `~/lab14-gateway`, y comparte el
+El gateway está versionado en [`infra/gateway/`](../infra/gateway/) y comparte el
 loopback del host (`network_mode: host`).
 
 ```bash
-cd ~/lab14-gateway
+cd infra/gateway
 
 # 1) Crear el archivo de credenciales (una sola vez)
+read -r -s -p 'Clave para el usuario lab14: ' GATEWAY_PASS; echo
 docker run --rm httpd:alpine \
   htpasswd -nbB lab14 "$GATEWAY_PASS" > .htpasswd
 
 # 2) Guardar la contraseña solo para el operador
 mkdir -p ~/.config/lab14
 printf '%s' "$GATEWAY_PASS" > ~/.config/lab14/gateway.pass
-chmod 600 ~/.config/lab14/gateway.pass ~/.config/lab14/credentials.txt
+chmod 600 .htpasswd ~/.config/lab14/gateway.pass ~/.config/lab14/credentials.txt
 
 # 3) Levantar / recrear
 docker compose up -d
@@ -203,7 +208,7 @@ Evidencia: [`salidas/gateway.txt`](salidas/gateway.txt) ·
 > para no mover Portainer; el riesgo está anotado en
 > [08-pendientes.md](08-pendientes.md).
 
-## 7. Smoke test completo
+## 7. Verificación completa
 
 ```bash
 # cadena app → api → db
@@ -249,6 +254,6 @@ La contraseña del gateway se toma de `~/.config/lab14/gateway.pass` o
 1. Swarm (`docker swarm init` / `join`).
 2. Portainer (`docker stack deploy`).
 3. Stack segmentado (`docker compose up -d`).
-4. Gateway (`docker compose up -d` en `~/lab14-gateway`).
+4. Gateway (`docker compose up -d` en `infra/gateway`).
 5. Túnel (servicio de Cloudflare).
-6. Smoke test y `./scripts/verificar.sh`.
+6. Verificación completa y `./scripts/verificar.sh`.

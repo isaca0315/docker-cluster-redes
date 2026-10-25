@@ -1,4 +1,4 @@
-# 07 — Troubleshooting
+# 07 — Solución de problemas
 
 Problemas reales encontrados durante el montaje y la generación de la
 documentación. Cada entrada tiene síntoma, causa y solución comprobada.
@@ -224,7 +224,7 @@ fallos y desaparecía al restaurar.
 
 ### 13. Cambios en `nginx.conf` no se aplican
 
-**Síntoma:** se edita `~/lab14-gateway/nginx.conf` y el comportamiento sigue
+**Síntoma:** se edita `infra/gateway/nginx.conf` y el comportamiento sigue
 igual.
 
 **Causa:** el archivo se monta como volumen al **crear** el contenedor; un
@@ -233,7 +233,7 @@ igual.
 **Solución:**
 
 ```bash
-cd ~/lab14-gateway
+cd ~/docker-cluster-redes/infra/gateway
 docker compose up -d --force-recreate gateway
 ```
 

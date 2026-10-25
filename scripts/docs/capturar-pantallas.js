@@ -100,11 +100,11 @@ const authHeader = BASIC_AUTH
   })()`));
   await save('05-diagrama.png', box);
 
-  // ---------- móvil ----------
+  // ---------- celular ----------
   await viewport(390, 844, true, 1.5);
   await send('Page.navigate', { url: APP + '/' });
   await wait(6000);
-  await save('04-panel-movil.jpg', null, 'jpeg');
+  await save('04-panel-celular.jpg', null, 'jpeg');
 
   // ---------- Portainer (login propio, sin Basic Auth) ----------
   if (PORTAINER) {

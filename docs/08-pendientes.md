@@ -17,6 +17,23 @@
 
 ## Evidencia ya cerrada
 
+### Gateway versionado en el repositorio ✅
+
+El compose, el `nginx.conf` y las instrucciones están en
+[`infra/gateway/`](../infra/gateway/):
+
+- [`docker-compose.yml`](../infra/gateway/docker-compose.yml) con
+  `network_mode: host`.
+- [`nginx.conf`](../infra/gateway/nginx.conf) con Basic Auth en `9000`, `8088` y
+  `9090`.
+- [`README.md`](../infra/gateway/README.md) con la preparación del `.htpasswd`,
+  el mapa de puertos y el túnel.
+- [`.gitignore`](../infra/gateway/.gitignore) que excluye `.htpasswd` y
+  `gateway.pass`.
+
+Así, `git clone` + las instrucciones permiten reproducir el gateway sin
+secretos. El detalle está en [`05-gateway-tunel.md`](05-gateway-tunel.md).
+
 ### Capturas internas de Portainer ✅
 
 Se capturaron con sesión iniciada y filtro de búsqueda:
@@ -62,21 +79,7 @@ Actualmente:
 **Acción:** fijar digests o versiones exactas antes de congelar el entregable y
 probar el redeploy. No se hizo para no romper el entorno durante la sesión.
 
-### 3. Versionar el gateway en el repositorio
-
-Hoy vive en `~/lab14-gateway` (fuera de Git). Conviene copiarlo a
-`infra/gateway/` con:
-
-- `docker-compose.yml`,
-- `nginx.conf`,
-- `README.md`,
-- un `.htpasswd.example` **sin** hash real,
-- un `.gitignore` para `.htpasswd` y `gateway.pass`.
-
-**Criterio de aceptación:** `git clone` + instrucciones reproducen el gateway
-sin secretos.
-
-### 4. Respaldo programado y probado
+### 3. Respaldo programado y probado
 
 El procedimiento está en [06-operacion.md](06-operacion.md), pero no hay cron ni
 restauración verificada. Añadir:
@@ -92,7 +95,7 @@ de prueba en un contenedor desechable.
 
 ## Prioridad 2 — calidad y operación
 
-### 5. Persistir las pruebas de interfaz
+### 4. Persistir las pruebas de interfaz
 
 Las 21 comprobaciones de la app se hicieron con CDP durante el desarrollo, pero
 no quedaron como script. Moverlas a `scripts/docs/test-ui.js` y ejecutarlas antes
@@ -101,7 +104,7 @@ de cada commit de `web/`.
 **Criterio de aceptación:** `node scripts/docs/test-ui.js` devuelve `21 OK, 0
 fallos` y falla con código distinto de cero si algo se rompe.
 
-### 6. Monitoreo y alertas
+### 5. Monitoreo y alertas
 
 No hay alertas si se cae la API o el túnel. Opciones:
 
@@ -113,17 +116,17 @@ No hay alertas si se cae la API o el túnel. Opciones:
 **Criterio de aceptación:** si se para `api`, llega una notificación en menos de
 5 minutos.
 
-### 7. Rotación de credenciales
+### 6. Rotación de credenciales
 
 - Basic Auth: `lab14` → rotar y actualizar `~/.config/lab14/gateway.pass`.
 - Portainer: `admin` → rotar desde la UI.
-- PostgreSQL: `appuser` / `apppass123` está en el compose; para producción,
-  usar Docker secrets y no versionar la contraseña.
+- PostgreSQL: el usuario `appuser` y su contraseña están en el compose; para
+  producción, usar Docker secrets y no versionar la contraseña.
 - Token de worker: `docker swarm join-token --rotate worker`.
 
 **Criterio de aceptación:** las credenciales nuevas funcionan y las viejas ya no.
 
-### 8. Limpieza del stack plano
+### 7. Limpieza del stack plano
 
 `web-planos` y `db-planos` siguen arriba para demostrar “el problema”. Si ya no
 se necesita:
@@ -142,7 +145,6 @@ Mantenerlo solo si se va a exponer la comparación en clase.
 | `9001` escucha en `0.0.0.0` y `[::]` | Portainer se usa también desde la LAN | login de Portainer; firewall de la red local |
 | `web` directo en `127.0.0.1:8080` sin auth | Solo loopback, útil para depurar | no se publica en la LAN |
 | Contraseña de PostgreSQL en el compose | Entorno de laboratorio | volumen local; cambiar si se publica |
-| Gateway fuera de Git | Se montó como capa de acceso rápida | documentado en [`05`](05-gateway-tunel.md) |
 
 ## Ideas para clase (opcional)
 

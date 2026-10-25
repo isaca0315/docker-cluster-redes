@@ -24,19 +24,24 @@ flowchart LR
 
 ## Archivos
 
-El gateway **no** vive en este repositorio; está en `~/lab14-gateway`:
+El gateway está versionado en [`infra/gateway/`](../infra/gateway/):
 
 ```text
-~/lab14-gateway/
+infra/gateway/
 ├── docker-compose.yml    # nginx:alpine con network_mode: host
 ├── nginx.conf            # 9000 / 8088 / 9090 + Basic Auth
-├── .htpasswd             # usuario lab14 (hash; no se versiona)
-└── README.md             # mapa de puertos y flujo
+├── README.md             # preparación, mapa de puertos y túnel
+├── .gitignore            # excluye .htpasswd y gateway.pass
+└── .htpasswd             # usuario lab14 (hash; se crea localmente, no se versiona)
 ```
 
 La contraseña en claro **no** está en `.htpasswd` (solo el hash) ni en el
 repositorio. Está en `~/.config/lab14/gateway.pass` y
 `~/.config/lab14/credentials.txt`, ambos con modo `600`.
+
+> Si antes usaste una copia en `~/lab14-gateway`, detén ese contenedor y
+> levántalo desde `infra/gateway` para que los volúmenes apunten a los archivos
+> versionados. El nombre del contenedor (`lab14-gateway`) no cambia.
 
 ## Mapa de puertos
 
@@ -125,7 +130,7 @@ gateway en el `Authorization`; el navegador nunca ve la contraseña de la API
 ### Crear o rotar la contraseña
 
 ```bash
-cd ~/lab14-gateway
+cd ~/docker-cluster-redes/infra/gateway
 
 # Nueva contraseña (no se imprime en pantalla si usas read -s)
 read -r -s -p 'Nueva clave: ' GATEWAY_PASS; echo
@@ -222,7 +227,7 @@ Evidencia cruda de la API: [`salidas/portainer.txt`](salidas/portainer.txt) ·
 | Cloudflare Access | **Pendiente** | No hay API token ni `cert.pem`; se puede añadir OTP/SSO desde el panel |
 | Credenciales | OK | Archivos modo `600`; no están en Git. Rotar si se comparten |
 | `portainer/portainer-ce:latest` | Deuda | El tag flotante puede actualizar sin querer; fijar versión en el compose |
-| Gateway fuera del repo | Deuda | `~/lab14-gateway` no se versiona; conviene copiarlo a `infra/gateway/` |
+| Gateway versionado | **Resuelto** | El compose, el `nginx.conf` y las instrucciones están en `infra/gateway/`; el `.htpasswd` se crea localmente y no se versiona |
 
 ## Diagnóstico rápido
 

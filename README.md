@@ -5,6 +5,9 @@ Guías completas para crear y gestionar un clúster **Docker Swarm** con
 (Laboratorio N.º 14 — Redes de Computadoras, UTP).
 
 > 📚 Documentación completa con capturas y transcripciones reales: [`docs/`](docs/README.md).
+>
+> 🧭 ¿Vas a replicar el laboratorio? Sigue la
+> [guía paso a paso](docs/00-guia-replica.md).
 
 ## 📁 Estructura del proyecto
 
@@ -15,12 +18,20 @@ docker-cluster-redes/
 ├── 📘 Documentación
 │   ├── docs/                                      # Documentación completa + evidencia
 │   │   ├── README.md                              # Índice general
+│   │   ├── 00-guia-replica.md                     # Réplica paso a paso (empieza aquí)
 │   │   ├── 01-arquitectura.md … 08-pendientes.md  # Guías del laboratorio
 │   │   ├── capturas/                              # 17 capturas reales (app, Portainer, terminales)
 │   │   └── salidas/                               # 9 transcripciones de comandos
 │   ├── docker-swarm-portainer-parte1-maestro.md   # Parte 1: nodo maestro + Portainer
 │   ├── docker-swarm-portainer-parte2-worker.md    # Parte 2: nodos worker
 │   └── docker-swarm-portainer-parte3-segmentacion.md  # Parte 3: segmentación front/back (UTP L14)
+│
+├── 🔐 infra/
+│   └── gateway/                                   # Gateway nginx versionado (Basic Auth)
+│       ├── docker-compose.yml                     # nginx:alpine con network_mode: host
+│       ├── nginx.conf                             # 9000 / 8088 / 9090 + Basic Auth
+│       ├── README.md                              # Preparación, puertos y túnel
+│       └── .gitignore                             # Excluye .htpasswd y gateway.pass
 │
 ├── 🐳 Stacks (docker-compose)
 │   ├── docker-compose-portainer.yml               # Portainer CE            (project: portainer)
@@ -62,12 +73,15 @@ docker-cluster-redes/
     └── index.html                                 # Página de ejemplo
 ```
 
-## 🚀 Quick Start
+## 🚀 Inicio rápido
 
 ```bash
-cd docker-cluster
+cd docker-cluster-redes
 chmod +x scripts/*.sh
 ```
+
+> Si es tu primera vez, la [guía de réplica](docs/00-guia-replica.md) tiene el
+> orden completo, las comprobaciones y la solución de problemas.
 
 ### A) Crear el clúster (Partes 1 y 2)
 
@@ -137,7 +151,8 @@ se sirve en `http://127.0.0.1:8080` (loopback) y, con Basic Auth, en
 - **Desarrollo:** stack, endpoints con estado en vivo, recorrido de una petición
   y el JSON real de `/api/db` + `/api/info`.
 - Haz clic en cualquier nodo del diagrama para saltar a su ficha técnica.
-- Se actualiza cada 4 segundos; incluye pausa de animación, reloj y vista móvil.
+- Se actualiza cada 4 segundos; incluye pausa de animación, reloj y vista en
+  celular.
 
 Endpoints que consume el panel (todos vía `web` → `api`):
 
@@ -149,19 +164,21 @@ Endpoints que consume el panel (todos vía `web` → `api`):
 
 ### 📚 Documentación completa y reproducible
 
-Toda la evidencia está en [`docs/`](docs/README.md): arquitectura, despliegue,
-redes, app, gateway, operación, troubleshooting y pendientes, con
-**transcripciones reales** y **capturas** de la app, Portainer y las terminales.
+Toda la evidencia está en [`docs/`](docs/README.md): guía de réplica,
+arquitectura, despliegue, redes, app, gateway, operación, solución de problemas
+y pendientes, con **transcripciones reales** y **capturas** de la app, Portainer
+y las terminales.
 
 | Página | Contenido |
 |---|---|
+| [`docs/00-guia-replica.md`](docs/00-guia-replica.md) | **Empieza aquí:** réplica paso a paso y lista de control |
 | [`docs/01-arquitectura.md`](docs/01-arquitectura.md) | Componentes, topología y flujo de una petición |
 | [`docs/02-despliegue.md`](docs/02-despliegue.md) | Swarm, worker, Portainer, stack, gateway y túnel |
 | [`docs/03-redes-segmentacion.md`](docs/03-redes-segmentacion.md) | `front`/`back`, DNS y las 7 pruebas |
 | [`docs/04-aplicacion.md`](docs/04-aplicacion.md) | Panel visual, endpoints y validación |
 | [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md) | Basic Auth, puertos y Cloudflare Tunnel |
-| [`docs/06-operacion.md`](docs/06-operacion.md) | Runbook, respaldos y reinicios |
-| [`docs/07-troubleshooting.md`](docs/07-troubleshooting.md) | Problemas reales y causa raíz |
+| [`docs/06-operacion.md`](docs/06-operacion.md) | Operación diaria, respaldos y reinicios |
+| [`docs/07-solucion-problemas.md`](docs/07-solucion-problemas.md) | Problemas reales y causa raíz |
 | [`docs/08-pendientes.md`](docs/08-pendientes.md) | Entregable, riesgos y deuda técnica |
 
 Para regenerar las transcripciones y las capturas:
@@ -283,7 +300,7 @@ docker service scale <stack>_<service>=5
   `db`. Si la DB publica `ports:` o falta esa opción, el aislamiento se pierde.
 - **Acceso remoto seguro:** `web` (8080) y `web-planos` (8081) se publican solo
   en `127.0.0.1`. El túnel de Cloudflare entra por el gateway nginx con Basic
-  Auth (`~/lab14-gateway`):
+  Auth ([`infra/gateway/`](infra/gateway/)):
   - `https://app-red.ponciop.online/` → app completa (gateway 9000 → web 8080).
   - `https://app-red.ponciop.online/api/db` → web reenvía a `api:5000`, que
     consulta `db:5432`.
@@ -291,8 +308,10 @@ docker service scale <stack>_<service>=5
   El gateway también ofrece acceso local en `8088` (app) y `9090` (Portainer).
   Portainer queda además accesible en la LAN por `9001` (decisión del
   laboratorio). No expongas los puertos 2377/7946/4789 ni el socket de Docker.
-- **El gateway no está en este repo:** vive en `~/lab14-gateway` y se documenta
-  en [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md). Si editas su
+- **El gateway está versionado en [`infra/gateway/`](infra/gateway/):** incluye
+  el compose, el `nginx.conf` y las instrucciones para crear el `.htpasswd`
+  local (que no se versiona). Se documenta en
+  [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md). Si editas su
   `nginx.conf`, recrea el contenedor (`docker compose up -d --force-recreate`).
 - **Proxy front → API:** `web/nginx.conf` monta en `web` un `location /api/`
   que reenvía a `http://api:5000/`. Sin ese proxy el navegador no puede hablar
