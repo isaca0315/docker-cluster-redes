@@ -22,9 +22,6 @@ docker-cluster-redes/
 │   │   ├── 01-arquitectura.md … 08-pendientes.md  # Guías del laboratorio
 │   │   ├── capturas/                              # 17 capturas reales (app, Portainer, terminales)
 │   │   └── salidas/                               # 9 transcripciones de comandos
-│   ├── docker-swarm-portainer-parte1-maestro.md   # Parte 1: nodo maestro + Portainer
-│   ├── docker-swarm-portainer-parte2-worker.md    # Parte 2: nodos worker
-│   └── docker-swarm-portainer-parte3-segmentacion.md  # Parte 3: segmentación front/back (UTP L14)
 │
 ├── 🔐 infra/
 │   └── gateway/                                   # Gateway nginx versionado (Basic Auth)
@@ -83,7 +80,7 @@ chmod +x scripts/*.sh
 > Si es tu primera vez, la [guía de réplica](docs/00-guia-replica.md) tiene el
 > orden completo, las comprobaciones y la solución de problemas.
 
-### A) Crear el clúster (Partes 1 y 2)
+### A) Crear el clúster
 
 ```bash
 # En el MAESTRO: inicializa swarm + despliega Portainer
@@ -99,7 +96,7 @@ chmod +x scripts/*.sh
 Portainer queda disponible en `http://<IP_MAESTRO>:9001` (en este laboratorio,
 `9001 → 9000`; el `9000` del host lo usa el gateway con Basic Auth).
 
-### B) Laboratorio de segmentación (Parte 3 — UTP L14)
+### B) Laboratorio de segmentación (UTP L14)
 
 ```bash
 # Paso 1: la red plana (el problema) — web SÍ alcanza la db directo
@@ -241,15 +238,6 @@ conecta a `back` y la DB no publica puertos.
 | `nslookup api.local` @172.28.10.53 | `172.28.10.20` |
 | `nslookup db.local` @172.28.10.53 | `172.28.20.20` |
 | `curl 127.0.0.1:8080` | `HTTP 200` |
-
-## 📚 Documentación por partes
-
-| Parte | Archivo | Contenido |
-|-------|---------|-----------|
-| 1 | `docker-swarm-portainer-parte1-maestro.md` | `swarm init`, Portainer, firewall, primer stack |
-| 2 | `docker-swarm-portainer-parte2-worker.md` | `swarm join`, verificación, diagnóstico, labels |
-| 3 | `docker-swarm-portainer-parte3-segmentacion.md` | redes `front`/`back`, `internal: true`, DNS interno |
-| — | [`docs/`](docs/README.md) | Documentación completa con capturas y transcripciones reales |
 
 ## 🔧 Comandos útiles
 
