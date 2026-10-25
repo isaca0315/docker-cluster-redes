@@ -25,7 +25,7 @@ const TOPOLOGY = {
         'Rol': 'Worker',
         'SO': 'Ubuntu 24.04',
       },
-      desc: 'Nodo trabajador unido con join-worker.sh. Sin servicios del stack del Lab 14: el stack corre en el manager.',
+      desc: 'Nodo trabajador unido con docker swarm join. Sin servicios del stack del Lab 14: el stack corre en el manager.',
     },
   ],
 

@@ -1,6 +1,6 @@
 # Stack del Laboratorio 14 (UTP) adaptado: segmentación front/back + DNS interno.
 # Ejecutar con:  docker compose -f docker-compose-network.yml up -d
-# Verificación:  ./scripts/verificar.sh   ->  7 OK, 0 FALLO
+# Verificación: 7 pruebas manuales (docs/guia-cluster.md, sección 3.3)
 
 
 name: lab14-segmentado
