@@ -1,0 +1,36 @@
+# Paso 1 del Laboratorio 14 (UTP): LA RED PLANA (el problema).
+# web y db comparten la MISMA red -> web alcanza la DB directo. Inseguro.
+# Ejecutar:  docker compose -f docker-compose-network-planos.yml up -d
+
+
+name: lab14-plano
+services:
+  web:
+    image: nginx:alpine
+    container_name: web-planos
+    ports:
+      - "8081:80"
+    volumes:
+      - ./examples/index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - plana
+
+  db:
+    image: postgres:13-alpine
+    container_name: db-planos
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass123
+    volumes:
+      - db_data_planos:/var/lib/postgresql/data
+    networks:
+      - plana
+
+networks:
+  plana:
+    driver: bridge
+
+volumes:
+  db_data_planos:
+    driver: local

@@ -1,0 +1,94 @@
+# Stack del Laboratorio 14 (UTP) adaptado: segmentación front/back + DNS interno.
+# Ejecutar con:  docker compose -f docker-compose-network.yml up -d
+# Verificación:  ./scripts/verificar.sh   ->  7 OK, 0 FALLO
+
+
+name: lab14-segmentado
+services:
+  # DNS interno de las zonas .local
+  dnsmasq:
+    image: 4km3/dnsmasq:2.85-r2
+    container_name: dnsmasq
+    volumes:
+      - ./dnsmasq.conf:/etc/dnsmasq.conf:ro
+    networks:
+      front:
+        ipv4_address: 172.28.10.53
+    cap_add:
+      - NET_ADMIN
+
+  # Web: solo en la red front (expuesta al exterior)
+  web:
+    image: nginx:alpine
+    container_name: web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./examples/index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      front:
+        ipv4_address: 172.28.10.10
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API: puente entre front y back (única que habla con la DB)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api
+    networks:
+      front:
+        ipv4_address: 172.28.10.20
+      back:
+        ipv4_address: 172.28.20.30
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # DB: solo en back (internal: true -> sin acceso externo ni ruta desde front)
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass123
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      back:
+        ipv4_address: 172.28.20.20
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  front:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
+          gateway: 172.28.10.1
+  back:
+    driver: bridge
+    internal: true          # <-- la clave: sin gateway al exterior
+    ipam:
+      config:
+        - subnet: 172.28.20.0/24
+          gateway: 172.28.20.1
+
+volumes:
+  db_data:
+    driver: local

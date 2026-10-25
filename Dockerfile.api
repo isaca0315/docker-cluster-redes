@@ -1,0 +1,26 @@
+FROM python:3.9-alpine
+
+WORKDIR /app
+
+# Instalar dependencias
+RUN apk add --no-cache gcc musl-dev linux-headers
+
+# Copiar código
+COPY api/app.py .
+COPY api/requirements.txt .
+
+# Instalar Python deps
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Exponer puerto (usado internamente)
+EXPOSE 5000
+
+# Crear usuario no root
+RUN adduser -D appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD python -c "import requests; requests.get('http://localhost:5000/health')" || exit 1
+
+CMD ["python", "app.py"]
