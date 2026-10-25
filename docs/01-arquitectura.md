@@ -5,13 +5,15 @@
 Montar un clúster **Docker Swarm** con dos nodos, administrarlo con
 **Portainer**, y desplegar una aplicación de tres capas (`web → api → db`) donde
 la base de datos queda **aislada** en una red interna. La aplicación se publica
-por un túnel de Cloudflare detrás de un gateway nginx con Basic Auth.
+en loopback detrás de un gateway nginx con Basic Auth. En el entorno del docente
+se añade, de forma **opcional**, un túnel de Cloudflare para el acceso público.
 
 ## Vista general
 
 ```mermaid
 flowchart LR
-    U["Usuario<br/>navegador"] -->|"HTTPS 443"| CF["Cloudflare<br/>edge + tunnel"]
+    U["Usuario<br/>navegador"] -->|"HTTP local 8088 / SSH"| GW
+    U -.->|"HTTPS (opcional)"| CF["Cloudflare<br/>edge + tunnel<br/>(solo docente)"]
 
     subgraph HOST["kernel-lab · 172.25.208.103"]
         direction TB
@@ -56,13 +58,14 @@ flowchart LR
 | `api` | `front` `.20` + `back` `.30` | `lab14-segmentado-api` (Flask, Python 3.9.25) | Única capa con acceso a la DB |
 | `db` | red `back`, `172.28.20.20` | `postgres:13-alpine` | Datos; sin puerto publicado |
 | `dnsmasq` | red `front`, `172.28.10.53` | `4km3/dnsmasq:2.85-r2` | DNS de las zonas `.local` |
-| Cloudflare Tunnel | servicio del host | remoto (versión 7) | Entrada pública sin abrir puertos |
+| Cloudflare Tunnel | servicio del host | remoto (versión 7) | **Opcional:** entrada pública del entorno del docente; el laboratorio funciona en local sin esto |
 
 ### Servicios del panel
 
 La pestaña **Infraestructura** del panel cuenta **7 servicios**:
 `Cloudflare Tunnel`, `Gateway nginx`, `Portainer`, `web`, `api`, `db` y
-`dnsmasq`. Los dos nodos se muestran por separado.
+`dnsmasq`. Los dos nodos se muestran por separado. El túnel aparece porque el
+panel documenta el entorno real del docente; **no es necesario replicarlo**.
 
 ## Flujo de una petición
 
@@ -99,18 +102,22 @@ sequenceDiagram
 Puntos clave:
 
 1. El navegador **nunca** habla directo con la API ni con la DB: solo con el
-   gateway.
+   gateway. Sin túnel, entra por `127.0.0.1:8088` o por un túnel SSH.
 2. `web` conoce a `api` por el nombre de servicio de Docker (`api:5000`).
 3. `api` conoce a `db` por el nombre de servicio (`db:5432`).
 4. `web` **no** está conectada a `back`: no tiene interfaz ni ruta hacia
    `172.28.20.0/24`.
 5. La DB no publica `ports:` y su red es `internal: true`.
 
+> El diagrama de secuencia muestra el flujo por el dominio público. Es el mismo
+> recorrido que en local, solo que sin Cloudflare: navegador → gateway → `web` →
+> `api` → `db`.
+
 ## Puertos y exposición
 
 | Puerto | Interfaz | Qué es | ¿Público? |
 |---|---|---|---|
-| `443` | Cloudflare | Entrada HTTPS | sí, vía túnel |
+| `443` | Cloudflare | Entrada HTTPS | solo si publicas (opcional) |
 | `9000` | `127.0.0.1` | Gateway: entrada del túnel | solo túnel/local |
 | `8088` | `127.0.0.1` | App a través del gateway | solo local |
 | `9090` | `127.0.0.1` | Portainer a través del gateway | solo local |
@@ -138,7 +145,7 @@ Evidencia: [`salidas/entorno.txt`](salidas/entorno.txt) y
 | Gateway en loopback | El túnel es saliente; no se abren puertos en el router ni en la LAN |
 | Basic Auth en el gateway | Segunda barrera antes de la app y de `/portainer/` |
 | Portainer en `9001` | Evita chocar con el gateway (`9000`) y mantiene su propio login |
-| `cluster-red` directo a `9001` | Decisión explícita para no mover Portainer; se acepta que no pase por Basic Auth |
+| `cluster-red` directo a `9001` | Solo si se publica con Cloudflare; decisión explícita para no mover Portainer, se acepta que no pase por Basic Auth |
 | Stack segmentado con `docker compose` | Se necesitan IPs fijas y `build:`; `docker stack deploy` no los admite en overlay |
 | App sin frameworks | Cero dependencias, se sirve como estáticos y se puede cachear/versionar con `?v=` |
 

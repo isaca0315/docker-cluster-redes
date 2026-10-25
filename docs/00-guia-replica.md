@@ -4,6 +4,12 @@ Esta es la guía pensada para **replicar el Laboratorio 14 desde cero**. Está
 ordenada por pasos y cada paso termina con una comprobación. Si solo quieres
 entender el diseño, empieza por [01 — Arquitectura](01-arquitectura.md).
 
+> **Cloudflare Tunnel no es requisito.** El laboratorio se completa en la
+> máquina del laboratorio o con un túnel SSH desde tu computadora. El túnel de
+> Cloudflare del [paso 8](#paso-8--publica-con-cloudflare-tunnel-opcional-no-requerido)
+> es una extensión opcional del entorno del docente; no lo necesitas para
+> entregar ni para aprobar.
+
 > **Tiempo estimado:** 60–90 minutos con dos máquinas Linux y Docker ya
 > instalado.
 >
@@ -16,7 +22,7 @@ entender el diseño, empieza por [01 — Arquitectura](01-arquitectura.md).
 
 ```mermaid
 flowchart LR
-    U["Navegador"] -->|"HTTP local o HTTPS"| G["Gateway nginx<br/>Basic Auth"]
+    U["Navegador"] -->|"HTTP local o túnel SSH"| G["Gateway nginx<br/>Basic Auth"]
     G --> W["web<br/>172.28.10.10"]
     subgraph FRONT["red front · 172.28.10.0/24"]
         W
@@ -57,7 +63,8 @@ base de datos no publica puertos.
 - Al menos **2 GB de RAM** y **10 GB de disco** por nodo.
 - Las máquinas deben verse por la red local (por ejemplo, `ping` entre ellas).
 - Acceso `sudo` para instalar Docker y abrir puertos del firewall.
-- Opcional: un dominio y Cloudflare si quieres publicar la app en Internet.
+- **No necesitas** un dominio ni Cloudflare. Solo se mencionan como extensión
+  opcional si quieres publicar la app en Internet.
 
 Comprueba las versiones:
 
@@ -357,7 +364,7 @@ docker compose up -d --force-recreate gateway
 cd ../..
 ```
 
-## Paso 7 — Abre la app y Portainer
+## Paso 7 — Abre la app y Portainer (acceso local)
 
 ### Desde la misma máquina
 
@@ -387,10 +394,14 @@ En la app, prueba las pestañas **Infraestructura**, **Redes** y
 
 ![Panel de infraestructura](capturas/01-panel-escritorio.png)
 
-## Paso 8 — Publica con Cloudflare Tunnel (opcional)
+## Paso 8 — Publica con Cloudflare Tunnel (opcional, no requerido)
 
-Si no necesitas acceso desde Internet, **sáltate este paso**: con el túnel SSH
-ya puedes usar la app. Si tienes un dominio en Cloudflare:
+**No lo necesitas para completar el laboratorio.** Si no tienes dominio o no
+quieres publicar la app en Internet, sáltate este paso: con el acceso local del
+paso 7 (o el túnel SSH) ya tienes todo lo necesario. Esta sección documenta cómo
+lo hizo el docente en su entorno, por si quieres repetirlo como extensión.
+
+Si tienes un dominio en Cloudflare:
 
 1. Crea un túnel en el panel de Cloudflare.
 2. Agrega un *public hostname* para la app:
@@ -507,7 +518,7 @@ docker stack rm portainer
 | [02 — Despliegue](02-despliegue.md) | Secuencia real con salidas y evidencias |
 | [03 — Redes y segmentación](03-redes-segmentacion.md) | `front`/`back`, DNS y las 7 pruebas |
 | [04 — Aplicación visual](04-aplicacion.md) | Panel, pestañas, endpoints y validación |
-| [05 — Gateway y túnel](05-gateway-tunel.md) | Basic Auth, puertos y Cloudflare |
+| [05 — Gateway y túnel](05-gateway-tunel.md) | Basic Auth y puertos; el túnel es opcional |
 | [06 — Operación](06-operacion.md) | Día a día, reinicios y respaldos |
 | [07 — Solución de problemas](07-solucion-problemas.md) | Problemas reales y causa raíz |
 | [08 — Pendientes](08-pendientes.md) | Entregable, riesgos y deuda técnica |

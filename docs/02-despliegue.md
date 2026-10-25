@@ -18,7 +18,7 @@ guardan en el repositorio.
 | Repositorio | `/home/kernel/docker-cluster-redes` |
 | Gateway | `infra/gateway/` (dentro del repositorio) |
 | DNS interno | `172.28.10.53` |
-| Túnel | Cloudflare, modo *remotely managed* |
+| Túnel | Cloudflare, modo *remotely managed* (solo entorno del docente; opcional) |
 
 ```bash
 cd ~/docker-cluster-redes
@@ -181,15 +181,19 @@ fuera no vuelve a montar el archivo:
 docker compose up -d --force-recreate gateway
 ```
 
-## 6. Túnel de Cloudflare
+## 6. Túnel de Cloudflare (opcional, no requerido)
+
+**No es necesario para replicar el laboratorio.** El acceso local del paso 5 es
+suficiente. Esta sección documenta el túnel que usó el docente en su entorno,
+por si quieres publicar la app como extensión.
 
 El túnel es **saliente** y se administra desde el panel de Cloudflare
 (*remotely managed*). No hay que abrir puertos en el router.
 
 | Public hostname | Servicio local | Qué sirve |
 |---|---|---|
-| `app-red.ponciop.online` | `http://localhost:9000` | App + API con Basic Auth |
-| `cluster-red.ponciop.online` | `http://localhost:9001` | Portainer directo (login propio) |
+| `app-red.ponciop.online` | `http://localhost:9000` | App + API con Basic Auth (solo docente) |
+| `cluster-red.ponciop.online` | `http://localhost:9001` | Portainer directo (solo docente) |
 
 Comprobación rápida:
 
@@ -211,16 +215,19 @@ Evidencia: [`salidas/gateway.txt`](salidas/gateway.txt) ·
 ## 7. Verificación completa
 
 ```bash
-# cadena app → api → db
-curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/api/health
-curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/api/db
-curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/api/info
+# cadena app → api → db en local (obligatoria)
+curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:9000/api/health
+curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:9000/api/db
+curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:9000/api/info
 
 # estado del clúster
 docker node ls
 docker stack services portainer
 docker compose -f docker-compose-network.yml ps
 ./scripts/verificar.sh
+
+# Opcional: los mismos endpoints por el túnel público (solo entorno del docente)
+curl -s -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/api/db
 ```
 
 Salidas reales:
@@ -255,5 +262,5 @@ La contraseña del gateway se toma de `~/.config/lab14/gateway.pass` o
 2. Portainer (`docker stack deploy`).
 3. Stack segmentado (`docker compose up -d`).
 4. Gateway (`docker compose up -d` en `infra/gateway`).
-5. Túnel (servicio de Cloudflare).
-6. Verificación completa y `./scripts/verificar.sh`.
+5. Verificación completa y `./scripts/verificar.sh`.
+6. Opcional, solo si publicas: túnel de Cloudflare.

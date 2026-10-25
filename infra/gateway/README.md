@@ -2,8 +2,11 @@
 
 Capa de acceso con **Basic Auth** delante de la aplicación y de Portainer.
 Escucha **solo en loopback** (`127.0.0.1`), así que no abre puertos a la red
-local: el túnel de Cloudflare es el único camino externo. Si no usas túnel,
-puedes entrar por un túnel SSH o desde la misma máquina.
+local. El laboratorio se usa desde la misma máquina o con un túnel SSH.
+
+> **Cloudflare Tunnel es opcional.** Esta guía no lo requiere. Si publicas la app
+> en Internet, el túnel es un camino de salida hacia el gateway; si no, ignora
+> esa sección.
 
 ## Requisitos
 
@@ -46,7 +49,7 @@ docker compose up -d
 
 | Qué | URL local | Destino real |
 |---|---|---|
-| **App** (entrada del túnel) | `http://localhost:9000/` | `http://127.0.0.1:8080` (`web`) |
+| **App** (con Basic Auth) | `http://localhost:9000/` | `http://127.0.0.1:8080` (`web`) |
 | App → API | `http://localhost:9000/api/...` | `web` reenvía a `api:5000` |
 | Portainer (por el gateway) | `http://localhost:9000/portainer/` | `http://127.0.0.1:9001/` |
 | App (acceso local directo) | `http://localhost:8088/` | `http://127.0.0.1:8080` |
@@ -55,14 +58,17 @@ docker compose up -d
 ## Flujo completo de la app
 
 ```text
-navegador
-  └─ https://<tu-dominio>/                 (Cloudflare, Basic Auth)
+navegador (local o túnel SSH)
+  └─ http://localhost:8088/               (Basic Auth)
        └─ nginx gateway 127.0.0.1:9000
             └─ web 127.0.0.1:8080
                  ├─ /              → HTML, CSS y JavaScript
                  └─ /api/*         → api:5000  (red front)
                                       └─ db:5432 (red back, internal)
 ```
+
+Si además publicas con Cloudflare, el mismo gateway recibe
+`https://<tu-dominio>/` en el puerto `9000` (ver la sección opcional del final).
 
 `web` usa `web/nginx.conf`:
 
@@ -116,10 +122,11 @@ directamente en `http://<IP_DEL_MAESTRO>:9001/` desde la red local. Esa ruta
 **no** pasa por el Basic Auth del gateway: solo la protege el login de
 Portainer.
 
-## Túnel de Cloudflare (opcional)
+## Túnel de Cloudflare (opcional, no requerido)
 
-El túnel es saliente: **no hay que abrir puertos** en el router ni en el host.
-En el panel de Cloudflare crea un túnel y agrega dos *public hostnames*:
+**No lo necesitas para el laboratorio.** Solo sirve para publicar la app en
+Internet. El túnel es saliente: **no hay que abrir puertos** en el router ni en
+el host. En el panel de Cloudflare crea un túnel y agrega dos *public hostnames*:
 
 | Public hostname | Servicio local | Qué sirve |
 |---|---|---|
@@ -175,7 +182,8 @@ curl -s -D - -o /dev/null -u "lab14:$GATEWAY_PASS" \
 docker logs -f lab14-gateway
 ```
 
-Si el túnel devuelve `502`, revisa en este orden:
+Si publicaste el túnel y devuelve `502`, revisa en este orden:
 `cloudflared` → gateway (`9000`) → `web` (`8080`). Si `8080` responde pero
 `9000` no, el problema está en el gateway o en el Basic Auth. Si `9000`
-responde pero el túnel no, el problema está en Cloudflare.
+responde pero el túnel no, el problema está en Cloudflare. En un laboratorio sin
+túnel este diagnóstico no aplica: usa directamente `8088` y `9090`.

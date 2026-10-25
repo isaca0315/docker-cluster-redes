@@ -1,11 +1,12 @@
-# 05 — Gateway y túnel
+# 05 — Gateway y túnel (el túnel es opcional)
 
 ## Por qué existe
 
 El laboratorio no debe exponer `web`, la API, la DB ni Portainer directamente a
 Internet. El gateway concentra la entrada en **loopback**, aplica **Basic Auth**
 y decide a qué upstream va cada ruta. Cloudflare Tunnel es el único camino
-público y es **saliente**: no requiere abrir puertos en el router.
+público y es **saliente**, pero es **opcional**: el laboratorio se completa con
+el acceso local o un túnel SSH. No lo necesitas para replicar ni para entregar.
 
 ```mermaid
 flowchart LR
@@ -39,19 +40,19 @@ La contraseña en claro **no** está en `.htpasswd` (solo el hash) ni en el
 repositorio. Está en `~/.config/lab14/gateway.pass` y
 `~/.config/lab14/credentials.txt`, ambos con modo `600`.
 
-> Si antes usaste una copia en `~/lab14-gateway`, detén ese contenedor y
-> levántalo desde `infra/gateway` para que los volúmenes apunten a los archivos
+> Si ya tenías un contenedor `lab14-gateway` creado desde otra ruta, deténlo y
+> recréalo desde `infra/gateway` para que los volúmenes apunten a los archivos
 > versionados. El nombre del contenedor (`lab14-gateway`) no cambia.
 
 ## Mapa de puertos
 
 | Escucha | Ruta | Upstream | Auth | Uso |
 |---|---|---|---|---|
-| `127.0.0.1:9000` | `/` | `127.0.0.1:8080` | Basic | Entrada del túnel `app-red` |
-| `127.0.0.1:9000` | `/portainer/` | `127.0.0.1:9001` | Basic | Portainer por el túnel |
+| `127.0.0.1:9000` | `/` | `127.0.0.1:8080` | Basic | App local con auth (y entrada del túnel si se publica) |
+| `127.0.0.1:9000` | `/portainer/` | `127.0.0.1:9001` | Basic | Portainer local con auth |
 | `127.0.0.1:8088` | `/` | `127.0.0.1:8080` | Basic | App en local |
 | `127.0.0.1:9090` | `/portainer/` | `127.0.0.1:9001` | Basic | Portainer en local |
-| `0.0.0.0:9001` | `/` | — | Login de Portainer | Portainer directo (LAN y `cluster-red`) |
+| `0.0.0.0:9001` | `/` | — | Login de Portainer | Portainer directo (LAN; `cluster-red` si se publica) |
 | `127.0.0.1:8080` | `/` | — | **sin auth** | `web` directo (solo loopback) |
 
 Comprobación de sockets reales:
@@ -108,6 +109,7 @@ host sin publicar puertos.
 Pruebas reales:
 
 ```bash
+# Acceso local (obligatorio)
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9000/                       # 401
 curl -s -o /dev/null -w '%{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" \
      http://127.0.0.1:9000/                                                          # 200
@@ -115,6 +117,8 @@ curl -s -o /dev/null -w '%{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" \
      http://127.0.0.1:8088/                                                          # 200
 curl -s -o /dev/null -w '%{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" \
      http://127.0.0.1:9090/portainer/                                                # 200
+
+# Acceso público (opcional, solo si publicaste el túnel)
 curl -s -o /dev/null -w '%{http_code}\n' https://app-red.ponciop.online/             # 401
 curl -s -o /dev/null -w '%{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" \
      https://app-red.ponciop.online/                                                 # 200
@@ -143,16 +147,17 @@ chmod 600 .htpasswd ~/.config/lab14/gateway.pass ~/.config/lab14/credentials.txt
 docker compose up -d --force-recreate gateway
 ```
 
-## Túnel de Cloudflare
+## Túnel de Cloudflare (opcional, solo entorno del docente)
 
-El túnel se administra de forma remota (panel de Cloudflare, *remotely
-managed*), versión de configuración **7**. En el host corre el servicio
-`cloudflared`; no hay que abrir `443` en el router.
+**No es requisito para el laboratorio.** El túnel se administra de forma remota
+(panel de Cloudflare, *remotely managed*), versión de configuración **7**. En el
+host del docente corre el servicio `cloudflared`; no hay que abrir `443` en el
+router. Si no lo usas, ignora esta sección.
 
 | Public hostname | Servicio local | Protección | Qué sirve |
 |---|---|---|---|
-| `app-red.ponciop.online` | `http://localhost:9000` | Basic Auth + TLS | App y `/api/*` |
-| `cluster-red.ponciop.online` | `http://localhost:9001` | Solo login de Portainer | UI de Portainer |
+| `app-red.ponciop.online` | `http://localhost:9000` | Basic Auth + TLS | App y `/api/*` (solo docente) |
+| `cluster-red.ponciop.online` | `http://localhost:9001` | Solo login de Portainer | UI de Portainer (solo docente) |
 
 ```bash
 # La app pública exige auth
@@ -179,17 +184,17 @@ El túnel no cachea la API (`DYNAMIC`); cada consulta llega al gateway.
 
 | Acceso | URL | Auth |
 |---|---|---|
-| Público | `https://cluster-red.ponciop.online/` | login de Portainer |
-| LAN | `http://172.25.208.103:9001/` | login de Portainer |
 | Local con Basic Auth | `http://127.0.0.1:9090/portainer/` | Basic + login |
-| Túnel con Basic Auth | `https://app-red.ponciop.online/portainer/` | Basic + login (no es el hostname principal) |
+| LAN | `http://172.25.208.103:9001/` | login de Portainer |
+| Público (opcional, solo docente) | `https://cluster-red.ponciop.online/` | login de Portainer |
+| Túnel con Basic Auth (opcional) | `https://app-red.ponciop.online/portainer/` | Basic + login |
 
 ![Login de Portainer](capturas/06-portainer-login.png)
 
 Las capturas se tomaron por loopback (`127.0.0.1:9001`) porque Portainer carga
 ~13 MB de JavaScript y, a través del túnel, el navegador headless no llegaba al
-formulario en 45 s. En local la SPA carga en ~2,1 s. El acceso documentado para
-personas sigue siendo `https://cluster-red.ponciop.online/`.
+formulario en 45 s. En local la SPA carga en ~2,1 s. Para el laboratorio, el
+acceso principal es local; el público solo aplica en el entorno del docente.
 
 ### Servicios y redes (sesión iniciada)
 
@@ -222,9 +227,9 @@ Evidencia cruda de la API: [`salidas/portainer.txt`](salidas/portainer.txt) ·
 
 | Tema | Estado | Comentario |
 |---|---|---|
-| `cluster-red` sin Basic Auth | **Aceptado** | Apunta directo a `9001`; solo protege el login de Portainer. Se decidió no mover Portainer |
+| `cluster-red` sin Basic Auth | **Aceptado** | Solo si se publica con Cloudflare; apunta directo a `9001` y solo protege el login de Portainer |
 | `9001` en `0.0.0.0` | **Aceptado** | Portainer es alcanzable desde la LAN y por IPv6. El resto de puertos está en loopback |
-| Cloudflare Access | **Pendiente** | No hay API token ni `cert.pem`; se puede añadir OTP/SSO desde el panel |
+| Cloudflare Access | **Opcional** | Solo aplica si publicas el túnel. No hay API token ni `cert.pem`; se puede añadir OTP/SSO desde el panel |
 | Credenciales | OK | Archivos modo `600`; no están en Git. Rotar si se comparten |
 | `portainer/portainer-ce:latest` | Deuda | El tag flotante puede actualizar sin querer; fijar versión en el compose |
 | Gateway versionado | **Resuelto** | El compose, el `nginx.conf` y las instrucciones están en `infra/gateway/`; el `.htpasswd` se crea localmente y no se versiona |
@@ -247,7 +252,7 @@ curl -s -D - -o /dev/null -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:9000
 docker logs -f lab14-gateway
 ```
 
-Si el túnel devuelve `502`, revisa en este orden: `cloudflared` → gateway
-(`9000`) → `web` (`8080`). Si `8080` responde pero `9000` no, el problema es el
-gateway o su auth. Si `9000` responde pero el túnel no, el problema es
-Cloudflare.
+Si el túnel devuelve `502` (solo si lo publicaste), revisa en este orden:
+`cloudflared` → gateway (`9000`) → `web` (`8080`). Si `8080` responde pero
+`9000` no, el problema está en el gateway o su auth. Si `9000` responde pero el
+túnel no, el problema está en Cloudflare.

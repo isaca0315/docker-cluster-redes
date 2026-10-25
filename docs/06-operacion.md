@@ -14,8 +14,10 @@ docker compose -f docker-compose-network.yml ps
 ./scripts/verificar.sh
 
 curl -s -o /dev/null -w 'app local   %{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:8088/
-curl -s -o /dev/null -w 'app pública %{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/
-curl -s -o /dev/null -w 'portainer   %{http_code}\n' https://cluster-red.ponciop.online/
+curl -s -o /dev/null -w 'portainer   %{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" http://127.0.0.1:9090/portainer/
+
+# Opcional, solo si publicaste con Cloudflare:
+# curl -s -o /dev/null -w 'app pública %{http_code}\n' -u "$GATEWAY_USER:$GATEWAY_PASS" https://app-red.ponciop.online/
 ```
 
 Estado normal esperado:
@@ -26,8 +28,9 @@ Estado normal esperado:
 | `docker stack services portainer` | `1/1` |
 | `docker compose ps` | `web`, `api`, `db` en `healthy`; `dnsmasq` arriba |
 | `./scripts/verificar.sh` | `7 OK, 0 FALLO` |
-| App local/pública | `200` con auth |
-| Portainer | `200` |
+| App local | `200` con auth |
+| Portainer local | `200` con auth |
+| Acceso público (opcional) | `200` con auth, solo si publicaste |
 
 ## Estado de los servicios
 
@@ -81,8 +84,9 @@ docker logs lab14-gateway --tail 50 -f
 docker service logs portainer_portainer --tail 50 -f
 ```
 
-Los logs de `web` muestran el usuario de Basic Auth y la IP de origen
-(Cloudflare añade `X-Forwarded-For`):
+Los logs de `web` muestran el usuario de Basic Auth y la IP de origen. Ejemplo
+del entorno del docente, con túnel: Cloudflare añade `X-Forwarded-For`. Sin
+túnel, la IP es la del host o la del túnel SSH.
 
 ```text
 172.28.10.1 - lab14 [25/Oct/2026:22:16:02 +0000] "GET /api/db HTTP/1.1" 200 43
@@ -233,7 +237,7 @@ Después revisa `git status` y haz commit de los cambios de docs.
 Orden recomendado para parar:
 
 ```bash
-# 1) cortar la entrada pública
+# 1) cortar la entrada pública (solo si usas túnel)
 #    (desde el panel de Cloudflare o el servicio cloudflared)
 sudo systemctl stop cloudflared 2>/dev/null || true
 

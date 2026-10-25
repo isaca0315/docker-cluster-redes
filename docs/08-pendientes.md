@@ -11,7 +11,7 @@
 | DNS `web.local`, `api.local`, `db.local` | ✅ | [`segmentacion.txt`](salidas/segmentacion.txt) |
 | `web` responde HTTP 200 | ✅ | [`segmentacion.txt`](salidas/segmentacion.txt) |
 | `./scripts/verificar.sh` = 7 OK, 0 FALLO | ✅ | [`terminal-segmentacion.png`](capturas/terminal-segmentacion.png) |
-| Acceso público con contraseña | ✅ | [`gateway.txt`](salidas/gateway.txt) |
+| Acceso con Basic Auth en local (opcional: público) | ✅ | [`gateway.txt`](salidas/gateway.txt) |
 | App visual con estado en vivo | ✅ | [`01-panel-escritorio.png`](capturas/01-panel-escritorio.png) |
 | Captura del stack y redes **dentro** de Portainer | ✅ | [servicios](capturas/07-portainer-servicios.png) y [redes](capturas/08-portainer-redes.png) |
 
@@ -27,7 +27,7 @@ El compose, el `nginx.conf` y las instrucciones están en
 - [`nginx.conf`](../infra/gateway/nginx.conf) con Basic Auth en `9000`, `8088` y
   `9090`.
 - [`README.md`](../infra/gateway/README.md) con la preparación del `.htpasswd`,
-  el mapa de puertos y el túnel.
+  el mapa de puertos y el túnel opcional.
 - [`.gitignore`](../infra/gateway/.gitignore) que excluye `.htpasswd` y
   `gateway.pass`.
 
@@ -50,11 +50,12 @@ real. Detalle en [`05-gateway-tunel.md`](05-gateway-tunel.md).
 
 ## Prioridad 1 — pendientes críticos
 
-### 1. Cloudflare Access como segunda capa
+### 1. Cloudflare Access como segunda capa (opcional)
 
-**Estado:** bloqueado. No hay API token ni `cert.pem`, así que no se puede
-configurar por API ni editar el ingress desde aquí. Se puede hacer a mano en el
-panel de Cloudflare.
+**Estado:** no requerido para el laboratorio. Solo aplica si publicas el túnel,
+que es una extensión del entorno del docente. No hay API token ni `cert.pem`,
+así que no se puede configurar por API ni editar el ingress desde aquí. Se puede
+hacer a mano en el panel de Cloudflare.
 
 **Propuesta:** una aplicación de Access para `app-red.ponciop.online` con OTP
 por correo o Google/GitHub, además del Basic Auth. Para `cluster-red`, evaluar
@@ -106,7 +107,7 @@ fallos` y falla con código distinto de cero si algo se rompe.
 
 ### 5. Monitoreo y alertas
 
-No hay alertas si se cae la API o el túnel. Opciones:
+No hay alertas si se cae la API (o el túnel, si lo publicaste). Opciones:
 
 - Un cron que ejecute `./scripts/verificar.sh` y avise por correo/Telegram.
 - Uptime Kuma en otro stack (no en `back`).
@@ -141,7 +142,7 @@ Mantenerlo solo si se va a exponer la comparación en clase.
 
 | Riesgo | Por qué se aceptó | Mitigación actual |
 |---|---|---|
-| `cluster-red` no pasa por Basic Auth | Se decidió no mover Portainer | login propio de Portainer; TLS de Cloudflare |
+| `cluster-red` no pasa por Basic Auth | Solo si se publica el túnel (opcional) | login propio de Portainer; TLS de Cloudflare |
 | `9001` escucha en `0.0.0.0` y `[::]` | Portainer se usa también desde la LAN | login de Portainer; firewall de la red local |
 | `web` directo en `127.0.0.1:8080` sin auth | Solo loopback, útil para depurar | no se publica en la LAN |
 | Contraseña de PostgreSQL en el compose | Entorno de laboratorio | volumen local; cambiar si se publica |
@@ -154,7 +155,8 @@ Mantenerlo solo si se va a exponer la comparación en clase.
   stack compose.
 - Añadir una segunda API en el worker con labels y constraints.
 - Medir latencia del túnel vs loopback con `curl -w`.
-- Explicar el `X-Forwarded-For` de Cloudflare en los logs de `web`.
+- Explicar el `X-Forwarded-For` de Cloudflare en los logs de `web` (solo si
+  publicas el túnel).
 
 ## Definición de “terminado”
 
@@ -163,7 +165,9 @@ El laboratorio se considera cerrado cuando:
 1. `./scripts/verificar.sh` da **7 OK, 0 FALLO**.
 2. `./scripts/capturar-docs.sh` termina sin errores y genera 9 transcripciones +
    17 imágenes.
-3. La app pública responde `401` sin credenciales y `200` con credenciales.
+3. La app con Basic Auth responde `401` sin credenciales y `200` con
+   credenciales en local. El acceso público por Cloudflare es opcional y no
+   cuenta para la entrega.
 4. Existe una captura del stack y las redes **dentro** de Portainer.
 5. `git status` está limpio y `docs/` está commiteado.
 

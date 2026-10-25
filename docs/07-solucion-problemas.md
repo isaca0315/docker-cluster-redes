@@ -13,9 +13,9 @@ documentación. Cada entrada tiene síntoma, causa y solución comprobada.
 | 4 | `docker stack deploy` rechaza IPs o `build:` | limitación de Swarm | usar `docker compose` para el L14 |
 | 5 | `port is already allocated` | otro stack ocupa 8080/8081 | parar el stack anterior |
 | 6 | `nc: bad address 'db'` | busybox sin `-w` / nombre no resuelto | usar `nc -z -w 3 <ip>` y probar por nombre e IP |
-| 7 | Portainer no carga por el túnel | bundles de ~13 MB | capturar por loopback; esperar más en uso real |
+| 7 | Portainer no carga por el túnel (solo si publicas) | bundles de ~13 MB | capturar por loopback; esperar más en uso real |
 | 8 | Captura de Portainer en blanco | SPA aún en “Loading Portainer…” | esperar condición + reintentos |
-| 9 | `/api/status` devuelve 404 intermitente | caché/edge transitorio de Cloudflare | reintentar; usar `/api/system/status` |
+| 9 | `/api/status` devuelve 404 intermitente (solo con túnel) | caché/edge transitorio de Cloudflare | reintentar; usar `/api/system/status` |
 | 10 | Terminal recortada o con franja vacía | viewport mínimo en la medición | medir con altura 200 y `getLayoutMetrics` |
 | 11 | Logs con códigos ANSI en la captura | colores de Portainer | limpiar ANSI en el render |
 | 12 | Banner de API caída siempre visible | `hidden` no ocultaba por `display` | `.banner[hidden] { display: none }` |
@@ -127,7 +127,10 @@ docker exec web sh -c "nc -z -w 2 172.28.20.20 5432; echo exit=\$?"   # exit=1
 docker exec api sh -c "nc -z -w 2 db 5432; echo exit=\$?"             # exit=0
 ```
 
-### 7. Portainer no carga por el túnel
+### 7. Portainer no carga por el túnel (solo si publicas)
+
+**Solo aplica si publicaste el túnel de Cloudflare.** Sin túnel este caso no
+ocurre.
 
 **Síntoma:** por `https://cluster-red.ponciop.online/` la SPA se queda en
 “Loading Portainer...” más de 45 s en el navegador headless.
@@ -138,9 +141,10 @@ las capturas. En loopback tarda ~2,1 s.
 
 **Solución:**
 
-- Para personas: esperar la primera carga; luego el navegador cachea.
-- Para las capturas: usar `http://127.0.0.1:9001` y documentar que el acceso
-  real es el túnel.
+- Para personas: usar el acceso local `http://127.0.0.1:9090/portainer/`; por el
+  túnel, esperar la primera carga (luego el navegador cachea).
+- Para las capturas: usar `http://127.0.0.1:9001`, que es el acceso principal
+  del laboratorio.
 - Si molesta en producción, considerar Portainer Business o un proxy con caché;
   no es un fallo del laboratorio.
 
@@ -163,7 +167,9 @@ await waitFor(
 
 Además, `save()` reintenta la captura hasta 3 veces con 700 ms de espera.
 
-### 9. `/api/status` 404 intermitente
+### 9. `/api/status` 404 intermitente (solo con túnel)
+
+**Solo aplica si publicaste el túnel de Cloudflare.**
 
 **Síntoma:** una consulta a `https://cluster-red.ponciop.online/api/status`
 devolvió `404` durante las pruebas; las siguientes devolvieron `200` con
@@ -270,8 +276,8 @@ que revisarlos al cambiar el entorno.
 
 | Capa | Comando | Si falla |
 |---|---|---|
-| DNS público | `dig +short app-red.ponciop.online` | revisar Cloudflare |
-| Túnel | `docker ps \| grep cloudflared` / panel | reiniciar el servicio |
+| DNS público (opcional) | `dig +short app-red.ponciop.online` | revisar Cloudflare; solo si publicaste |
+| Túnel (opcional) | `docker ps \| grep cloudflared` / panel | reiniciar el servicio; solo si publicaste |
 | Gateway | `curl -I http://127.0.0.1:9000/` | `docker logs lab14-gateway` |
 | Auth | `curl -u ... http://127.0.0.1:9000/` | revisar `.htpasswd` |
 | Web | `curl -I http://127.0.0.1:8080/` | `docker logs web` |

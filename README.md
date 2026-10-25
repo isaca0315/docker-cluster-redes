@@ -138,14 +138,16 @@ docker exec api python -c "import requests; print(requests.get('http://localhost
 
 `web/` contiene una app completa (HTML/CSS/JS, sin dependencias externas) que
 se sirve en `http://127.0.0.1:8080` (loopback) y, con Basic Auth, en
-`http://127.0.0.1:8088/` y en `https://app-red.ponciop.online/`.
+`http://127.0.0.1:8088/`. Las URL públicas con dominio son del entorno del
+docente y **no son necesarias** para replicar el laboratorio.
 
 ![Panel de infraestructura](docs/capturas/01-panel-escritorio.png)
 
-- **Diagrama SVG animado:** Cloudflare → gateway nginx → `web` → `api` → `db`,
-  con paquetes en movimiento, red `front` y red `back` (internal), DNS y Swarm.
+- **Diagrama SVG animado:** Cloudflare (opcional) → gateway nginx → `web` →
+  `api` → `db`, con paquetes en movimiento, red `front` y red `back` (internal),
+  DNS y Swarm.
 - **Infraestructura:** nodos `kernel-lab` (Leader) y `ubuntu24-cwl` (Worker),
-  Portainer, gateway, tunnel, web, api, db y dnsmasq.
+  Portainer, gateway, web, api, db y dnsmasq. El túnel solo aparece si se publica.
 - **Redes:** subredes, IPs estáticas, miembros, tabla DNS y las 7 pruebas de
   segmentación.
 - **Desarrollo:** stack, endpoints con estado en vivo, recorrido de una petición
@@ -173,10 +175,10 @@ y las terminales.
 |---|---|
 | [`docs/00-guia-replica.md`](docs/00-guia-replica.md) | **Empieza aquí:** réplica paso a paso y lista de control |
 | [`docs/01-arquitectura.md`](docs/01-arquitectura.md) | Componentes, topología y flujo de una petición |
-| [`docs/02-despliegue.md`](docs/02-despliegue.md) | Swarm, worker, Portainer, stack, gateway y túnel |
+| [`docs/02-despliegue.md`](docs/02-despliegue.md) | Swarm, worker, Portainer, stack y gateway; túnel opcional |
 | [`docs/03-redes-segmentacion.md`](docs/03-redes-segmentacion.md) | `front`/`back`, DNS y las 7 pruebas |
 | [`docs/04-aplicacion.md`](docs/04-aplicacion.md) | Panel visual, endpoints y validación |
-| [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md) | Basic Auth, puertos y Cloudflare Tunnel |
+| [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md) | Basic Auth y puertos; el túnel de Cloudflare es opcional |
 | [`docs/06-operacion.md`](docs/06-operacion.md) | Operación diaria, respaldos y reinicios |
 | [`docs/07-solucion-problemas.md`](docs/07-solucion-problemas.md) | Problemas reales y causa raíz |
 | [`docs/08-pendientes.md`](docs/08-pendientes.md) | Entregable, riesgos y deuda técnica |
@@ -203,8 +205,9 @@ docker stack deploy -c docker-compose-examples.yml my-nginx
 
 ```mermaid
 flowchart LR
-    U[Navegador] -->|HTTPS| CF[Cloudflare Tunnel]
-    CF -->|localhost:9000| GW["Gateway nginx<br/>Basic Auth"]
+    U[Navegador] -->|"local 8088 / túnel SSH"| GW["Gateway nginx<br/>Basic Auth"]
+    U -.->|"HTTPS (opcional)"| CF["Cloudflare Tunnel<br/>(solo entorno del docente)"]
+    CF -->|localhost:9000| GW
     CF -->|cluster-red:9001| PT[Portainer]
     GW --> W[web .10]
     subgraph FRONT["front 172.28.10.0/24"]
@@ -221,9 +224,10 @@ flowchart LR
     PT -. "gestiona" .-> SW["Swarm<br/>kernel-lab + ubuntu24-cwl"]
 ```
 
-**Cadena completa:** navegador → Cloudflare → gateway (Basic Auth) → `web` →
-`api` → `db`. La API es la única con interfaces en `front` y `back`; `web`
-nunca se conecta a `back` y la DB no publica puertos.
+**Cadena obligatoria en local:** navegador → gateway (Basic Auth) → `web` →
+`api` → `db`. El túnel de Cloudflare es una extensión opcional del entorno del
+docente. La API es la única con interfaces en `front` y `back`; `web` nunca se
+conecta a `back` y la DB no publica puertos.
 
 
 **Restricciones de seguridad verificadas:**
@@ -271,9 +275,9 @@ docker service scale <stack>_<service>=5
 | 2377 | LAN (TCP) | Swarm management |
 | 4789 | LAN (UDP) | Overlay network |
 | 7946 | LAN (TCP/UDP) | Gossip protocol |
-| 443 | Cloudflare | Entrada HTTPS del túnel |
+| 443 | Cloudflare (opcional) | Entrada HTTPS del túnel; solo entorno del docente |
 | 9001 | `0.0.0.0` + `[::]` | Portainer (`9001 → 9000`) |
-| 9000 | `127.0.0.1` | Gateway nginx (entrada del túnel) |
+| 9000 | `127.0.0.1` | Gateway nginx (app local; entrada del túnel si se publica) |
 | 8088 | `127.0.0.1` | App a través del gateway |
 | 9090 | `127.0.0.1` | Portainer a través del gateway |
 | 8080 | `127.0.0.1` | Web del stack segmentado (sin auth) |
@@ -298,14 +302,16 @@ docker service scale <stack>_<service>=5
   `docker-compose-examples.yml` usa imágenes publicadas y sin `container_name`.
 - **`internal: true`** en la red `back` es lo que bloquea el acceso de `web` a
   `db`. Si la DB publica `ports:` o falta esa opción, el aislamiento se pierde.
-- **Acceso remoto seguro:** `web` (8080) y `web-planos` (8081) se publican solo
-  en `127.0.0.1`. El túnel de Cloudflare entra por el gateway nginx con Basic
-  Auth ([`infra/gateway/`](infra/gateway/)):
+- **Acceso local y remoto:** `web` (8080) y `web-planos` (8081) se publican solo
+  en `127.0.0.1`. Para replicar no necesitas Cloudflare: el gateway ofrece
+  `http://127.0.0.1:8088/` (app) y `http://127.0.0.1:9090/portainer/` (Portainer),
+  y desde otra máquina puedes llegar con un túnel SSH.
+  **Opcional, solo entorno del docente:** el túnel de Cloudflare entra por el
+  gateway con Basic Auth ([`infra/gateway/`](infra/gateway/)):
   - `https://app-red.ponciop.online/` → app completa (gateway 9000 → web 8080).
   - `https://app-red.ponciop.online/api/db` → web reenvía a `api:5000`, que
     consulta `db:5432`.
   - `https://cluster-red.ponciop.online/` → Portainer directo (login propio).
-  El gateway también ofrece acceso local en `8088` (app) y `9090` (Portainer).
   Portainer queda además accesible en la LAN por `9001` (decisión del
   laboratorio). No expongas los puertos 2377/7946/4789 ni el socket de Docker.
 - **El gateway está versionado en [`infra/gateway/`](infra/gateway/):** incluye

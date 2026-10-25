@@ -20,10 +20,11 @@ habla con el gateway; la app consulta la API a través del proxy `/api/` de
 
 ![Panel de escritorio](capturas/01-panel-escritorio.png)
 
-- Diagrama SVG animado: Cloudflare → gateway → web → api → db, con paquetes en
-  movimiento, la red `front`, la red `back` (candado) y dnsmasq.
+- Diagrama SVG animado: Cloudflare (opcional) → gateway → web → api → db, con
+  paquetes en movimiento, la red `front`, la red `back` (candado) y dnsmasq.
 - Tarjetas del clúster (`kernel-lab` Leader, `ubuntu24-cwl` Worker).
-- Siete servicios: túnel, gateway, Portainer, web, api, db y dnsmasq.
+- Siete servicios en el entorno del docente: túnel, gateway, Portainer, web,
+  api, db y dnsmasq. En una réplica sin túnel son seis; el túnel es opcional.
 - Runtime de la API en vivo: hostname, Python, uptime, target de DB e IPs.
 - Contadores animados: 2 nodos, 7 servicios, 2 redes, 7/7 pruebas.
 
@@ -43,7 +44,8 @@ habla con el gateway; la app consulta la API a través del proxy `/api/` de
 
 - Stack de desarrollo: frontend, API, datos y entrega.
 - Tabla de endpoints con estado en vivo y latencia.
-- Recorrido de una petición (`navegador → Cloudflare → gateway → web → api → db`).
+- Recorrido de una petición (`navegador → gateway → web → api → db`). El
+  diagrama incluye Cloudflare como paso opcional del entorno del docente.
 - Config del proxy de `web`.
 - JSON vivo con las respuestas reales de `/api/db` y `/api/info`.
 
@@ -155,7 +157,8 @@ Detalles de implementación:
 - La app se captura con Basic Auth vía `Network.setExtraHTTPHeaders`.
 - Portainer se captura por loopback: sus bundles superan los 10 MB y por el
   túnel el headless no llega a la pantalla de login en el presupuesto de espera.
-  La captura documenta el login; el acceso real sigue siendo el túnel.
+  La captura documenta el login; el acceso principal del laboratorio es local
+  (`127.0.0.1:9090/portainer/`), y el túnel es opcional.
 
 ## Editar la app
 

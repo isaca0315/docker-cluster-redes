@@ -2,8 +2,9 @@
 
 Documentación completa del laboratorio levantado en **kernel-lab**
 (UTP, Redes de Computadoras). Incluye el clúster Swarm, Portainer, el stack
-segmentado `front`/`back`, el DNS interno, la aplicación visual y la cadena de
-exposición por túnel con Basic Auth.
+segmentado `front`/`back`, el DNS interno, la aplicación visual y un gateway
+con Basic Auth. Cloudflare Tunnel se documenta como extensión **opcional** del
+entorno del docente: no es necesario para replicar ni para entregar.
 
 > **Estado:** operativo y verificado el **2026-10-25** (transcripciones
 > 22:15–22:16 UTC; capturas entre 22:13 y 22:16 UTC).
@@ -15,14 +16,26 @@ exposición por túnel con Basic Auth.
 
 ## Accesos
 
+Estos son los accesos que necesita un estudiante para replicar y revisar el
+laboratorio:
+
 | Qué | URL | Protección |
 |---|---|---|
-| App del laboratorio | <https://app-red.ponciop.online/> | Basic Auth del gateway |
-| API a través de la app | `https://app-red.ponciop.online/api/*` | Basic Auth del gateway |
-| Portainer | <https://cluster-red.ponciop.online/> | login propio de Portainer |
 | App en local | <http://127.0.0.1:8088/> | Basic Auth del gateway |
 | Portainer en local | <http://127.0.0.1:9090/portainer/> | Basic Auth del gateway |
 | App directa (sin auth) | <http://127.0.0.1:8080/> | solo loopback |
+| Portainer directo | <http://127.0.0.1:9001/> | login propio de Portainer |
+
+> **Cloudflare Tunnel es opcional.** Las URL públicas de abajo corresponden al
+> entorno del docente y se incluyen como evidencia; **no son necesarias** para
+> replicar el laboratorio. Para publicar desde otra máquina basta un túnel SSH
+> a `8088` y `9090`.
+
+| Qué | URL | Protección |
+|---|---|---|
+| App pública (opcional) | <https://app-red.ponciop.online/> | Basic Auth del gateway |
+| API pública (opcional) | `https://app-red.ponciop.online/api/*` | Basic Auth del gateway |
+| Portainer público (opcional) | <https://cluster-red.ponciop.online/> | login propio de Portainer |
 
 Las credenciales están en `~/.config/lab14/credentials.txt` (modo `600`).
 Este repositorio **no** contiene contraseñas: en los comandos se usan
@@ -34,10 +47,10 @@ Este repositorio **no** contiene contraseñas: en los comandos se usan
 |---|---|---|
 | 00 | [Guía de réplica](00-guia-replica.md) | **Empieza aquí:** pasos ordenados, comprobaciones y lista de control final |
 | 01 | [Arquitectura](01-arquitectura.md) | Componentes, topología, flujo de una petición y decisiones de diseño |
-| 02 | [Despliegue](02-despliegue.md) | Swarm, worker, Portainer, stack segmentado, gateway y túnel, paso a paso |
+| 02 | [Despliegue](02-despliegue.md) | Swarm, worker, Portainer, stack segmentado y gateway, paso a paso (túnel opcional) |
 | 03 | [Redes y segmentación](03-redes-segmentacion.md) | `front`/`back`, `internal: true`, DNS interno y las 7 pruebas |
 | 04 | [Aplicación visual](04-aplicacion.md) | Panel animado, pestañas, endpoints, polling y validación |
-| 05 | [Gateway y túnel](05-gateway-tunel.md) | Basic Auth, mapa de puertos, Cloudflare Tunnel y riesgos |
+| 05 | [Gateway y túnel](05-gateway-tunel.md) | Basic Auth y puertos; el túnel de Cloudflare es opcional |
 | 06 | [Operación](06-operacion.md) | Guía diaria: estado, logs, reinicios, respaldo y regeneración de docs |
 | 07 | [Solución de problemas](07-solucion-problemas.md) | Problemas reales encontrados y su causa raíz |
 | 08 | [Pendientes](08-pendientes.md) | Entregable, deuda técnica y siguientes pasos |
@@ -70,7 +83,7 @@ Todo lo que aparece en esta documentación se genera con un solo comando:
 | [`salidas/redes.txt`](salidas/redes.txt) | `docker network inspect` de `front` y `back` | [terminal](capturas/terminal-redes.png) |
 | [`salidas/segmentacion.txt`](salidas/segmentacion.txt) | `./scripts/verificar.sh`, `getent`, `nc`, `nslookup` | [terminal](capturas/terminal-segmentacion.png) |
 | [`salidas/api.txt`](salidas/api.txt) | `curl /api/health`, `/api/db`, `/api/info` | [terminal](capturas/terminal-api.png) |
-| [`salidas/gateway.txt`](salidas/gateway.txt) | `curl` 401/200 local y público | [terminal](capturas/terminal-gateway.png) |
+| [`salidas/gateway.txt`](salidas/gateway.txt) | `curl` 401/200 local y público (opcional) | [terminal](capturas/terminal-gateway.png) |
 | [`salidas/portainer.txt`](salidas/portainer.txt) | API de Portainer: `stacks`, `endpoints`, `services`, `networks` | [terminal](capturas/terminal-portainer.png) |
 | [`salidas/logs.txt`](salidas/logs.txt) | `docker logs web`, `api`, Portainer | [terminal](capturas/terminal-logs.png) |
 
@@ -96,8 +109,8 @@ Todo lo que aparece en esta documentación se genera con un solo comando:
   fotografiaron con Chrome a la **altura real** del contenido, sin recortes.
 - La app se capturó a través del gateway con Basic Auth; Portainer se capturó
   por loopback (`127.0.0.1:9001`) porque sus bundles superan los 10 MB y por el
-  túnel tardan más que el presupuesto del navegador headless. El acceso real
-  documentado sigue siendo el túnel.
+  túnel tardan más que el presupuesto del navegador headless. El acceso
+  principal del laboratorio es local (`8088` y `9090`); el túnel es opcional.
 - La fecha de generación está en `salidas/entorno.txt`.
 
 ## Estructura de esta carpeta

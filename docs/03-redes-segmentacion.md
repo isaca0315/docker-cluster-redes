@@ -177,8 +177,8 @@ docker exec api sh -c "nc -z -w 2 db 5432; echo exit=\$?"
 | Se cae `db` | `/api/db` responde `503` con `{"db":"unreachable"}`; la app muestra DB en rojo |
 | Se cae `api` | `web` devuelve `502` en `/api/*`; la app muestra el banner de API caída |
 | Se cae `web` | El gateway devuelve `502`; no hay app |
-| Se cae el gateway | El túnel devuelve `502`/error de Cloudflare; `8080` sigue disponible en loopback |
-| Se cae el túnel | La app deja de ser accesible desde Internet; el resto sigue local |
+| Se cae el gateway | `8088` y `9090` dejan de responder; `8080` sigue disponible en loopback. Si publicaste, el túnel devuelve `502` |
+| Se cae el túnel (solo si lo usas) | La app deja de ser accesible desde Internet; el acceso local sigue funcionando |
 
 ## Advertencia sobre el stack plano
 
