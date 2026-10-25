@@ -221,6 +221,8 @@ main {
   color: #ffe6a8;
   font-size: .85rem;
 }
+/* El atributo hidden debe ganar al display:flex de arriba. */
+.banner[hidden] { display: none; }
 .banner button {
   margin-left: auto;
   padding: 7px 14px;

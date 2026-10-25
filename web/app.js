@@ -610,6 +610,11 @@ function boot() {
 
   poll();
   schedulePoll();
+
+  // Al volver a la pestaña, refrescar de inmediato en vez de esperar al ciclo.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) poll();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', boot);
