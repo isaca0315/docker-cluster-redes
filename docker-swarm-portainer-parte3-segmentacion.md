@@ -138,7 +138,7 @@ Debe terminar con **`Resultado: 7 OK, 0 FALLO`** (verificado en este proyecto).
 | `nslookup web.local` @172.28.10.53 | `172.28.10.10` |
 | `nslookup api.local` @172.28.10.53 | `172.28.10.20` |
 | `nslookup db.local` @172.28.10.53 | `172.28.20.20` |
-| `curl localhost:8080` | `HTTP 200` |
+| `curl 127.0.0.1:8080` | `HTTP 200` |
 
 ### Endpoints de la API (extra)
 
@@ -155,7 +155,7 @@ docker exec api python -c "import requests; print(requests.get('http://localhost
 
 ## Paso 5 — Gestión desde Portainer
 
-1. Abre Portainer en `http://<IP_MAESTRO>:9000`
+1. Abre Portainer en `http://<IP_MAESTRO>:9001` (o por el túnel, `https://cluster-red.ponciop.online/`)
 2. Ve a **Stacks** → verás el stack desplegado
 3. Ve a **Networks** → confirma `front` y `back`
 4. En **Services** revisa healthchecks y réplicas
@@ -195,10 +195,13 @@ docker compose -f docker-compose-network.yml down -v --remove-orphans
 docker compose -f docker-compose-network-planos.yml down -v --remove-orphans
 ```
 
+> Documentación ampliada con capturas y transcripciones reales:
+> [`docs/03-redes-segmentacion.md`](docs/03-redes-segmentacion.md).
+
 ## Entregable
 
-- [ ] Stack con redes `front`/`back` (`back` con `internal: true`).
-- [ ] Pruebas: `web ↛ db` (por nombre y por IP) y `api → db` OK.
-- [ ] `web` responde `HTTP 200` en `localhost:8080`.
-- [ ] Salida del `./scripts/verificar.sh` (7 OK, 0 FALLO).
-- [ ] Captura de pantalla del stack y las redes en Portainer.
+- [x] Stack con redes `front`/`back` (`back` con `internal: true`).
+- [x] Pruebas: `web ↛ db` (por nombre y por IP) y `api → db` OK.
+- [x] `web` responde `HTTP 200` en `127.0.0.1:8080`.
+- [x] Salida del `./scripts/verificar.sh` (7 OK, 0 FALLO).
+- [ ] Captura de pantalla del stack y las redes **dentro** de Portainer.

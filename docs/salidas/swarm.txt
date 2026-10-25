@@ -1,0 +1,23 @@
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker node ls
+ID                            HOSTNAME       STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+qwxje8515jzlaabeab1qzu9pn *   kernel-lab     Ready     Active         Leader           29.8.1
+1z32d1kilxflg1com9tqeavdl     ubuntu24-cwl   Ready     Active                          29.1.3
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker node inspect self --format "host={{.Description.Hostname}} rol={{.Spec.Role}} estado={{.Status.State}} lider={{.ManagerStatus.Leader}}"
+host=kernel-lab rol=manager estado=ready lider=true
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker node inspect ubuntu24-cwl --format "host={{.Description.Hostname}} rol={{.Spec.Role}} estado={{.Status.State}} disponibilidad={{.Spec.Availability}}"
+host=ubuntu24-cwl rol=worker estado=ready disponibilidad=active
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker stack ls
+NAME        SERVICES
+portainer   1
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker stack services portainer
+ID             NAME                  MODE         REPLICAS   IMAGE                           PORTS
+7jq0on4x7iqo   portainer_portainer   replicated   1/1        portainer/portainer-ce:latest   *:9001->9000/tcp
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker service ls
+ID             NAME                  MODE         REPLICAS   IMAGE                           PORTS
+7jq0on4x7iqo   portainer_portainer   replicated   1/1        portainer/portainer-ce:latest   *:9001->9000/tcp

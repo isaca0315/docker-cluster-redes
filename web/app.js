@@ -10,7 +10,7 @@ const TOPOLOGY = {
       status: 'ready',
       fields: {
         'IP LAN': '172.25.208.103',
-        'Docker': '29.1.3',
+        'Docker': '29.8.1',
         'Rol': 'Manager / Leader',
         'SO': 'Linux',
       },

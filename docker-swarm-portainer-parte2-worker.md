@@ -123,7 +123,7 @@ docker service ps my-nginx_web
 
 ## Paso 6: Verificar desde Portainer
 
-1. Accede a Portainer en el maestro: `http://<IP_MAESTRO>:9000`
+1. Accede a Portainer en el maestro: `http://<IP_MAESTRO>:9001`
 2. Ve a la sección **Nodes**
 3. Deberías ver tu worker listado
 4. Ve a **Stacks** y verifica los servicios

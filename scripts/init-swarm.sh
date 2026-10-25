@@ -54,4 +54,4 @@ else
 fi
 
 echo -e "\n✅ ¡Swarm inicializado correctamente!"
-echo "🌐 Accede a Portainer en: http://$IP_ADDRESS:9000"
+echo "🌐 Accede a Portainer en: http://$IP_ADDRESS:9001"

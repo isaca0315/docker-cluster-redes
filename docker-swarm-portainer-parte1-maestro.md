@@ -12,11 +12,11 @@ Esta guía explica cómo inicializar un clúster Docker Swarm y configurar Porta
 
 - Un servidor con Docker Engine instalado
 - Al menos 1 nodo (podrás agregar más workers después)
-- Puerto 9000 libre (para Portainer)
+- Puerto 9001 libre (para Portainer; el 9000 queda para el gateway con Basic Auth)
 
 ```bash
 docker --version && docker compose version
-ss -ltn | grep -q ':9000' && echo "¡9000 ocupado!" || echo "puerto 9000 libre"
+ss -ltn | grep -q ':9001' && echo "¡9001 ocupado!" || echo "puerto 9001 libre"
 ```
 
 ## Paso 1: Inicializar Docker Swarm
@@ -56,16 +56,14 @@ docker stack deploy -c docker-compose-portainer.yml portainer
 ### Contenido de `docker-compose-portainer.yml`:
 
 ```yaml
-version: '3.8'
-
+# docker-compose-portainer.yml (versión real del laboratorio)
+# Sin `name:`: `docker stack deploy` toma el nombre del argumento de la CLI.
 services:
   portainer:
     image: portainer/portainer-ce:latest
-    container_name: portainer
     command: -H unix:///var/run/docker.sock
     ports:
-      - "9000:9000"
-      - "8000:8000"
+      - "9001:9000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
@@ -81,12 +79,14 @@ volumes:
     driver: local
 ```
 
+> En el laboratorio Portainer se publica en **9001** para no chocar con el
+> gateway (`9000`). No se mapea el puerto Edge (`8000`).
+
 ### Opción B: Usando docker run (más rápido para prueba)
 
 ```bash
 docker run -d \
-  -p 9000:9000 \
-  -p 8000:8000 \
+  -p 9001:9000 \
   --name portainer \
   --restart=always \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -110,14 +110,14 @@ sudo ufw allow 2377/tcp    # Docker Swarm management
 sudo ufw allow 4789/udp    # Docker overlay network
 sudo ufw allow 7946/tcp    # Docker Swarm gossip
 sudo ufw allow 7946/udp    # Docker Swarm gossip
-sudo ufw allow 9000/tcp    # Portainer
-sudo ufw allow 8000/tcp    # Portainer Edge
+sudo ufw allow 9001/tcp    # Portainer (9000 es solo loopback para el gateway)
+# No abras 8000: Edge no se usa en este laboratorio
 ```
 
 ## Paso 4: Acceder a Portainer
 
 1. Abre tu navegador
-2. Visita: `http://<IP_DEL_NODO>:9000`
+2. Visita: `http://<IP_DEL_NODO>:9001`
 3. Configura el admin user
 4. Conéctate al endpoint local
 
@@ -203,8 +203,9 @@ El script `scripts/init-swarm.sh` hace los pasos 1, 2 y 7 de una vez:
 | 2377 | Docker Swarm (TCP) |
 | 4789 | Overlay network (UDP) |
 | 7946 | Gossip protocol (TCP/UDP) |
-| 8000 | Portainer Edge |
-| 9000 | Portainer UI |
+| 8000 | Portainer Edge (no usado) |
+| 9001 | Portainer UI (`9001 → 9000`) |
+| 9000 | Gateway nginx (solo loopback) |
 
 ## Comandos útiles
 

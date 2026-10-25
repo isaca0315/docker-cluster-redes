@@ -4,13 +4,20 @@ Guías completas para crear y gestionar un clúster **Docker Swarm** con
 **Portainer**, incluyendo el laboratorio de **segmentación de redes**
 (Laboratorio N.º 14 — Redes de Computadoras, UTP).
 
+> 📚 Documentación completa con capturas y transcripciones reales: [`docs/`](docs/README.md).
+
 ## 📁 Estructura del proyecto
 
 ```
-docker-cluster/
+docker-cluster-redes/
 ├── README.md                                       # Este archivo
 │
 ├── 📘 Documentación
+│   ├── docs/                                      # Documentación completa + evidencia
+│   │   ├── README.md                              # Índice general
+│   │   ├── 01-arquitectura.md … 08-pendientes.md  # Guías del laboratorio
+│   │   ├── capturas/                              # 17 capturas reales (app, Portainer, terminales)
+│   │   └── salidas/                               # 9 transcripciones de comandos
 │   ├── docker-swarm-portainer-parte1-maestro.md   # Parte 1: nodo maestro + Portainer
 │   ├── docker-swarm-portainer-parte2-worker.md    # Parte 2: nodos worker
 │   └── docker-swarm-portainer-parte3-segmentacion.md  # Parte 3: segmentación front/back (UTP L14)
@@ -40,7 +47,9 @@ docker-cluster/
 │   ├── deploy-stack.sh                            # Despliega un stack
 │   ├── validate-swarm.sh                          # Valida el clúster
 │   ├── verificar.sh                               # Verifica segmentación y DNS (7 pruebas)
-│   └── demo-scaling.sh                            # Demuestra escalado horizontal
+│   ├── demo-scaling.sh                            # Demuestra escalado horizontal
+│   ├── capturar-docs.sh                           # Regenera transcripciones y capturas
+│   └── docs/                                      # Render de terminales y CDP (Chrome)
 │
 ├── 🌐 web/                                        # App visual del laboratorio
 │   ├── index.html                                 # Panel + diagrama SVG animado
@@ -73,7 +82,8 @@ chmod +x scripts/*.sh
 ./scripts/validate-swarm.sh
 ```
 
-Portainer queda disponible en `http://<IP_MAESTRO>:9000`.
+Portainer queda disponible en `http://<IP_MAESTRO>:9001` (en este laboratorio,
+`9001 → 9000`; el `9000` del host lo usa el gateway con Basic Auth).
 
 ### B) Laboratorio de segmentación (Parte 3 — UTP L14)
 
@@ -113,8 +123,10 @@ docker exec api python -c "import requests; print(requests.get('http://localhost
 ### Panel visual del laboratorio
 
 `web/` contiene una app completa (HTML/CSS/JS, sin dependencias externas) que
-se sirve en `http://localhost:8080` y, por el túnel, en
-`https://app-red.ponciop.online/` con Basic Auth.
+se sirve en `http://127.0.0.1:8080` (loopback) y, con Basic Auth, en
+`http://127.0.0.1:8088/` y en `https://app-red.ponciop.online/`.
+
+![Panel de infraestructura](docs/capturas/01-panel-escritorio.png)
 
 - **Diagrama SVG animado:** Cloudflare → gateway nginx → `web` → `api` → `db`,
   con paquetes en movimiento, red `front` y red `back` (internal), DNS y Swarm.
@@ -125,6 +137,7 @@ se sirve en `http://localhost:8080` y, por el túnel, en
 - **Desarrollo:** stack, endpoints con estado en vivo, recorrido de una petición
   y el JSON real de `/api/db` + `/api/info`.
 - Haz clic en cualquier nodo del diagrama para saltar a su ficha técnica.
+- Se actualiza cada 4 segundos; incluye pausa de animación, reloj y vista móvil.
 
 Endpoints que consume el panel (todos vía `web` → `api`):
 
@@ -133,6 +146,34 @@ Endpoints que consume el panel (todos vía `web` → `api`):
 | `GET /api/health` | `{"status":"healthy","service":"api"}` |
 | `GET /api/db` | `{"db":"reachable","host":"db","port":5432}` |
 | `GET /api/info` | hostname, Python, uptime, IPs y target de DB |
+
+### 📚 Documentación completa y reproducible
+
+Toda la evidencia está en [`docs/`](docs/README.md): arquitectura, despliegue,
+redes, app, gateway, operación, troubleshooting y pendientes, con
+**transcripciones reales** y **capturas** de la app, Portainer y las terminales.
+
+| Página | Contenido |
+|---|---|
+| [`docs/01-arquitectura.md`](docs/01-arquitectura.md) | Componentes, topología y flujo de una petición |
+| [`docs/02-despliegue.md`](docs/02-despliegue.md) | Swarm, worker, Portainer, stack, gateway y túnel |
+| [`docs/03-redes-segmentacion.md`](docs/03-redes-segmentacion.md) | `front`/`back`, DNS y las 7 pruebas |
+| [`docs/04-aplicacion.md`](docs/04-aplicacion.md) | Panel visual, endpoints y validación |
+| [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md) | Basic Auth, puertos y Cloudflare Tunnel |
+| [`docs/06-operacion.md`](docs/06-operacion.md) | Runbook, respaldos y reinicios |
+| [`docs/07-troubleshooting.md`](docs/07-troubleshooting.md) | Problemas reales y causa raíz |
+| [`docs/08-pendientes.md`](docs/08-pendientes.md) | Entregable, riesgos y deuda técnica |
+
+Para regenerar las transcripciones y las capturas:
+
+```bash
+./scripts/capturar-docs.sh                # todo
+./scripts/capturar-docs.sh --sin-pantallas  # solo texto
+```
+
+Requiere `docker`, `curl`, `python3`, `jq`, Chrome y Node. La contraseña del
+gateway se lee de `~/.config/lab14/gateway.pass` o de `$GATEWAY_PASS` y nunca se
+escribe en `docs/`.
 
 ### C) Escalado en el clúster (extra Swarm)
 
@@ -145,17 +186,28 @@ docker stack deploy -c docker-compose-examples.yml my-nginx
 
 ```mermaid
 flowchart LR
+    U[Navegador] -->|HTTPS| CF[Cloudflare Tunnel]
+    CF -->|localhost:9000| GW["Gateway nginx<br/>Basic Auth"]
+    CF -->|cluster-red:9001| PT[Portainer]
+    GW --> W[web .10]
     subgraph FRONT["front 172.28.10.0/24"]
         DNS[dnsmasq .53]
-        W[web .10]
+        W
         A[api .20]
     end
     subgraph BACK["back 172.28.20.0/24 (internal: true)"]
         DB[(db .20)]
     end
-    W --> A --> DB
+    W -->|"/api/*"| A
+    A -->|"5432"| DB
     W -. "bloqueado" .-> DB
+    PT -. "gestiona" .-> SW["Swarm<br/>kernel-lab + ubuntu24-cwl"]
 ```
+
+**Cadena completa:** navegador → Cloudflare → gateway (Basic Auth) → `web` →
+`api` → `db`. La API es la única con interfaces en `front` y `back`; `web`
+nunca se conecta a `back` y la DB no publica puertos.
+
 
 **Restricciones de seguridad verificadas:**
 
@@ -167,7 +219,7 @@ flowchart LR
 | `nslookup web.local` @172.28.10.53 | `172.28.10.10` |
 | `nslookup api.local` @172.28.10.53 | `172.28.10.20` |
 | `nslookup db.local` @172.28.10.53 | `172.28.20.20` |
-| `curl localhost:8080` | `HTTP 200` |
+| `curl 127.0.0.1:8080` | `HTTP 200` |
 
 ## 📚 Documentación por partes
 
@@ -176,6 +228,7 @@ flowchart LR
 | 1 | `docker-swarm-portainer-parte1-maestro.md` | `swarm init`, Portainer, firewall, primer stack |
 | 2 | `docker-swarm-portainer-parte2-worker.md` | `swarm join`, verificación, diagnóstico, labels |
 | 3 | `docker-swarm-portainer-parte3-segmentacion.md` | redes `front`/`back`, `internal: true`, DNS interno |
+| — | [`docs/`](docs/README.md) | Documentación completa con capturas y transcripciones reales |
 
 ## 🔧 Comandos útiles
 
@@ -196,24 +249,29 @@ docker service scale <stack>_<service>=5
 
 ## 📖 Puertos
 
-| Puerto | Uso |
-|--------|-----|
-| 2377 | Swarm management (TCP) |
-| 4789 | Overlay network (UDP) |
-| 7946 | Gossip protocol (TCP/UDP) |
-| 9000 | Portainer UI |
-| 8000 | Portainer Edge |
-| 8080 | Web (stack segmentado) |
-| 8081 | Web (red plana) |
-| 5000 | API Flask (interno) |
-| 53 | DNS interno (dnsmasq) |
+| Puerto | Interfaz | Uso |
+|--------|----------|-----|
+| 2377 | LAN (TCP) | Swarm management |
+| 4789 | LAN (UDP) | Overlay network |
+| 7946 | LAN (TCP/UDP) | Gossip protocol |
+| 443 | Cloudflare | Entrada HTTPS del túnel |
+| 9001 | `0.0.0.0` + `[::]` | Portainer (`9001 → 9000`) |
+| 9000 | `127.0.0.1` | Gateway nginx (entrada del túnel) |
+| 8088 | `127.0.0.1` | App a través del gateway |
+| 9090 | `127.0.0.1` | Portainer a través del gateway |
+| 8080 | `127.0.0.1` | Web del stack segmentado (sin auth) |
+| 8081 | `127.0.0.1` | Web de la red plana (demo) |
+| 5000 | interna | API Flask (no publicada) |
+| 5432 | interna | PostgreSQL (no publicada) |
+| 53 | interna | DNS interno (dnsmasq) |
+| 8000 | — | Edge de Portainer (no mapeado) |
 
 ## ⚠️ Notas importantes
 
 - **Cada stack tiene su propio `name:` de proyecto**, así los dos stacks del
   laboratorio (plano y segmentado) pueden estar levantados **a la vez** sin
   destruirse entre ellos. Sin esto, ambos usan el nombre del directorio
-  (`docker-cluster`) y los servicios `web`/`db` colisionan.
+  (`docker-cluster-redes`) y los servicios `web`/`db` colisionan.
 - **`docker compose` vs `docker stack deploy`:** el stack segmentado
   (`docker-compose-network.yml`) usa IPs estáticas (`ipv4_address`) y `dnsmasq`
   para replicar el laboratorio del L14 — eso funciona con `docker compose`.
@@ -231,7 +289,11 @@ docker service scale <stack>_<service>=5
     consulta `db:5432`.
   - `https://cluster-red.ponciop.online/` → Portainer directo (login propio).
   El gateway también ofrece acceso local en `8088` (app) y `9090` (Portainer).
-  No expongas los puertos 2377/7946/4789 ni el socket de Docker.
+  Portainer queda además accesible en la LAN por `9001` (decisión del
+  laboratorio). No expongas los puertos 2377/7946/4789 ni el socket de Docker.
+- **El gateway no está en este repo:** vive en `~/lab14-gateway` y se documenta
+  en [`docs/05-gateway-tunel.md`](docs/05-gateway-tunel.md). Si editas su
+  `nginx.conf`, recrea el contenedor (`docker compose up -d --force-recreate`).
 - **Proxy front → API:** `web/nginx.conf` monta en `web` un `location /api/`
   que reenvía a `http://api:5000/`. Sin ese proxy el navegador no puede hablar
   con la API (la API no publica puertos al host).
@@ -248,13 +310,16 @@ docker service scale <stack>_<service>=5
 
 ## 🧪 Entregable (UTP L14)
 
-- [ ] Stack con redes `front`/`back` (`back` con `internal: true`).
-- [ ] `web` NO resuelve ni alcanza `db` (por nombre y por IP).
-- [ ] `api` SÍ alcanza `db`.
-- [ ] DNS interno: `web.local`, `api.local`, `db.local`.
-- [ ] `web` responde `HTTP 200` en `localhost:8080`.
-- [ ] Salida de `./scripts/verificar.sh` = **7 OK, 0 FALLO**.
-- [ ] Captura del stack y las redes en Portainer.
+- [x] Stack con redes `front`/`back` (`back` con `internal: true`).
+- [x] `web` NO resuelve ni alcanza `db` (por nombre y por IP).
+- [x] `api` SÍ alcanza `db`.
+- [x] DNS interno: `web.local`, `api.local`, `db.local`.
+- [x] `web` responde `HTTP 200` en `127.0.0.1:8080`.
+- [x] Salida de `./scripts/verificar.sh` = **7 OK, 0 FALLO**.
+- [x] Captura del stack y las redes **dentro** de Portainer ([servicios](docs/capturas/07-portainer-servicios.png) y [redes](docs/capturas/08-portainer-redes.png)).
+
+Evidencia completa en [`docs/`](docs/README.md): 9 transcripciones y 17
+capturas, incluida la terminal con `7 OK, 0 FALLO`.
 
 ## 🧹 Limpieza
 

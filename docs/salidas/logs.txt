@@ -1,0 +1,20 @@
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker logs web --tail 6
+172.28.10.1 - lab14 [25/Oct/2026:22:16:01 +0000] "GET / HTTP/1.1" 200 17066 "-" "curl/8.5.0" "190.219.101.129, 127.0.0.1"
+172.28.10.1 - lab14 [25/Oct/2026:22:16:02 +0000] "GET /api/db HTTP/1.1" 200 43 "-" "curl/8.5.0" "190.219.101.129, 127.0.0.1"
+172.28.10.1 - lab14 [25/Oct/2026:22:16:03 +0000] "GET /api/health HTTP/1.1" 200 37 "-" "curl/8.5.0" "190.219.101.129, 127.0.0.1"
+172.28.10.1 - lab14 [25/Oct/2026:22:16:03 +0000] "GET /api/health HTTP/1.1" 200 37 "https://app-red.ponciop.online/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36" "181.178.243.11, 127.0.0.1"
+172.28.10.1 - lab14 [25/Oct/2026:22:16:03 +0000] "GET /api/info HTTP/1.1" 200 215 "https://app-red.ponciop.online/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36" "181.178.243.11, 127.0.0.1"
+172.28.10.1 - lab14 [25/Oct/2026:22:16:03 +0000] "GET /api/db HTTP/1.1" 200 43 "https://app-red.ponciop.online/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36" "181.178.243.11, 127.0.0.1"
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker logs api --tail 4
+172.28.10.10 - - [25/Oct/2026 22:16:03] "GET /health HTTP/1.1" 200 -
+172.28.10.10 - - [25/Oct/2026 22:16:03] "GET /health HTTP/1.1" 200 -
+172.28.10.10 - - [25/Oct/2026 22:16:03] "GET /db HTTP/1.1" 200 -
+172.28.10.10 - - [25/Oct/2026 22:16:03] "GET /info HTTP/1.1" 200 -
+
+kernel@kernel-lab:~/docker-cluster-redes$ docker service logs portainer_portainer --tail 4
+2026/10/25 09:53PM WRN github.com/portainer/portainer/api/http/handler/system/status.go:43 > The /status endpoint is deprecated and will be removed in a future version of Portainer. Please use the /system/status endpoint instead. |
+2026/10/25 10:07PM WRN github.com/portainer/portainer/api/http/handler/system/status.go:43 > The /status endpoint is deprecated and will be removed in a future version of Portainer. Please use the /system/status endpoint instead. |
+2026/10/25 10:13PM WRN github.com/portainer/portainer/api/http/handler/system/status.go:43 > The /status endpoint is deprecated and will be removed in a future version of Portainer. Please use the /system/status endpoint instead. |
+2026/10/25 10:16PM WRN github.com/portainer/portainer/api/http/handler/system/status.go:43 > The /status endpoint is deprecated and will be removed in a future version of Portainer. Please use the /system/status endpoint instead. |

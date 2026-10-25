@@ -28,7 +28,7 @@ docker node ls 2>/dev/null --format "table {{.ID}}\t{{.Hostname}}\t{{.Status}}\t
 
 # 4. Verificar Puertos
 echo -e "\n4️⃣ Verificando puertos necesarios..."
-PORTS=(2377/tcp 4789/udp 7946/tcp 7946/udp 9000/tcp 8000/tcp)
+PORTS=(2377/tcp 4789/udp 7946/tcp 7946/udp 9000/tcp 9001/tcp)
 for port in "${PORTS[@]}"; do
     PORT=${port%/*}
     if ss -tuln | grep -q ":$PORT "; then
